@@ -31,6 +31,10 @@ Release History
 
 **App Service**
 
+* `az logicapp workflow trigger list/show/show-schema/show-callback-url/run`: Add commands to inspect and run Logic Apps Standard workflow triggers
+* `az logicapp workflow trigger history list/show/show-inputs/show-outputs/resubmit`: Add commands to inspect and resubmit workflow trigger history entries
+* `az logicapp workflow mock list`: Add command to list operations that can be mocked in a generated unit test
+* `az logicapp workflow unit-test create`: Add command to generate a unit-test mock definition from a workflow run
 * `az webapp exec`: Add command to run an interactive shell or execute commands in Linux web app containers (preview) (#33640)
 * `az webapp create/list-runtimes`: Change Node.js 26 runtime identifier (#33864)
 * `az appservice plan create`: Fix Windows plan help examples to include `--is-linux false`, consistent with the default Linux behavior when the flag is omitted (#33828)

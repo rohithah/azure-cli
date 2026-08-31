@@ -1664,3 +1664,84 @@ subscription than the app service environment, please use the resource ID for --
             default='app')
         c.argument('slot', options_list=['--slot', '-s'],
                    help='Name of the web app slot. Default to the production slot if not specified.')
+
+    # ------------------------------------------------------------------
+    # M2 workflow surface: triggers, trigger history, mock catalog, unit-test
+    # ------------------------------------------------------------------
+    # ``-n/--name`` (dest ``name``, ``id_part='name'``) and ``--slot/-s`` are inherited
+    # from ``argument_context('logicapp')`` above (L1202-1207). We do not redeclare them.
+    # ``--slot`` reachability against the site-runtime hostruntime route is unverified
+    # (see port-execution.md); the flag is registered for parity via inheritance and its
+    # runtime effect is a named settling experiment, not a claim.
+
+    for command_name in (
+        'logicapp workflow trigger list',
+        'logicapp workflow trigger show',
+        'logicapp workflow trigger show-schema',
+        'logicapp workflow trigger show-callback-url',
+        'logicapp workflow trigger run',
+    ):
+        with self.argument_context(command_name) as c:
+            c.argument('workflow', options_list=['--workflow'], help='Workflow name.')
+    for command_name in (
+        'logicapp workflow trigger show',
+        'logicapp workflow trigger show-schema',
+        'logicapp workflow trigger show-callback-url',
+        'logicapp workflow trigger run',
+    ):
+        with self.argument_context(command_name) as c:
+            c.argument('trigger', options_list=['--trigger'], help='Trigger name.')
+    with self.argument_context('logicapp workflow trigger list') as c:
+        c.argument('max_items', options_list=['--max-items'], type=int, arg_group='Pagination',
+                   help='Maximum number of items to return from the client-side page.')
+        c.argument('next_token', options_list=['--next-token', '--continuation-token'], arg_group='Pagination',
+                   help='Continuation token returned by a previous trigger list call.')
+    with self.argument_context('logicapp workflow trigger run') as c:
+        c.argument('payload_file', options_list=['--payload-file'],
+                   help='Optional JSON file to send as the trigger request payload.')
+        c.argument('no_wait', options_list=['--no-wait'], action='store_true',
+                   help='Do not wait on the trigger run to reach a terminal state. Today this call is fire-and-forget by construction (the CLI returns as soon as the platform accepts the trigger); the flag is exposed per CLI convention for run-producing verbs and to make the intent explicit.')
+
+    for command_name in (
+        'logicapp workflow trigger history list',
+        'logicapp workflow trigger history show',
+        'logicapp workflow trigger history show-inputs',
+        'logicapp workflow trigger history show-outputs',
+        'logicapp workflow trigger history resubmit',
+    ):
+        with self.argument_context(command_name) as c:
+            c.argument('workflow', options_list=['--workflow'], help='Workflow name.')
+            c.argument('trigger', options_list=['--trigger'], help='Trigger name.')
+    for command_name in (
+        'logicapp workflow trigger history show',
+        'logicapp workflow trigger history show-inputs',
+        'logicapp workflow trigger history show-outputs',
+    ):
+        with self.argument_context(command_name) as c:
+            c.argument('history_id', options_list=['--history-id'], help='Trigger history entry id.')
+    with self.argument_context('logicapp workflow trigger history list') as c:
+        c.argument('max_items', options_list=['--max-items'], type=int, arg_group='Pagination',
+                   help='Maximum number of items to return from the client-side page.')
+        c.argument('next_token', options_list=['--next-token', '--continuation-token'], arg_group='Pagination',
+                   help='Continuation token returned by a previous trigger history list call.')
+    with self.argument_context('logicapp workflow trigger history resubmit') as c:
+        c.argument('history_ids', options_list=['--history-ids'], nargs='+',
+                   help='One or more trigger history entry ids to resubmit.')
+        c.argument('no_wait', options_list=['--no-wait'], action='store_true',
+                   help='Do not wait on the resubmitted runs to reach a terminal state. Today the per-history-id POST is fire-and-forget by construction (the CLI returns as soon as the platform accepts the resubmit); the flag is exposed per CLI convention for run-producing verbs and to make the intent explicit.')
+
+    with self.argument_context('logicapp workflow mock list') as c:
+        c.argument('http', options_list=['--http'], action='store_true',
+                   help='Return only HTTP mockable operation types.')
+        c.argument('max_items', options_list=['--max-items'], type=int, arg_group='Pagination',
+                   help='Maximum number of items to return from the client-side page.')
+        c.argument('next_token', options_list=['--next-token', '--continuation-token'], arg_group='Pagination',
+                   help='Continuation token returned by a previous mock list call.')
+
+    with self.argument_context('logicapp workflow unit-test create') as c:
+        c.argument('workflow', options_list=['--workflow'], help='Workflow name.')
+        c.argument('run_id', options_list=['--run-id'], help='Workflow run identifier.')
+        c.argument('unit_test_name', options_list=['--unit-test-name'],
+                   help='Name to place in the generated mock file. Sent as the only request-body field, UnitTestName.')
+        c.argument('output_file', options_list=['--output-file'],
+                   help='Local path where the generated application/zip artifact is written. If omitted, raw zip bytes are streamed to stdout; no default path is invented.')
