@@ -118,7 +118,8 @@ def trigger_history_list(cmd, resource_group_name, name, workflow, trigger, max_
     payload = client.list(trigger_histories_path(workflow, trigger), params={"$expand": "run/properties"}, continuation_token=next_token, max_items=max_items)
     items = [_history_response(item, workflow, trigger) for item in _value(payload)]
     fields = ["value[].workflow", "value[].trigger", "value[].historyId"]
-    if any(item.pop("_runIdSynthesised", False) for item in items):
+    run_id_synthesised = [item.pop("_runIdSynthesised", False) for item in items]
+    if any(run_id_synthesised):
         fields.append("value[].runId")
     return {
         "schemaVersion": TRIGGER_HISTORY_SCHEMA_VERSION,

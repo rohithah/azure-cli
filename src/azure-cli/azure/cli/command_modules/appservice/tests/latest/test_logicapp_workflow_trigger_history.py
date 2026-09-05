@@ -182,6 +182,64 @@ def test_trigger_history_synthesises_run_id_from_run_reference_id():
     assert "value[].runId" in result["synthesised"]["fields"]
 
 
+def test_trigger_history_list_strips_private_synthesis_hint_from_every_entry():
+    # Regression: ``any(item.pop(...) for item in items)`` short-circuits on the
+    # first truthy entry, leaving the private ``_runIdSynthesised`` key on every
+    # subsequent entry and leaking it into the public JSON contract. Every other
+    # list fixture in this file has exactly ONE entry, so the defect was
+    # structurally unreachable by the suite. This fixture has several, all of
+    # them synthesised, so entry 0 cannot mask entries 1..n.
+    client = _Client({
+        "value": [
+            {
+                "name": "hist{}".format(i),
+                "properties": {
+                    "status": "Succeeded",
+                    "fired": True,
+                    "run": {"id": "/subscriptions/sub/resourceGroups/rg/providers/Microsoft.Logic/workflows/wf/runs/run{}".format(i)},
+                },
+            }
+            for i in range(4)
+        ]
+    })
+
+    result = trigger_history_list(_Cmd(), "rg", "site", "wf", "manual", client=client)
+
+    assert len(result["value"]) == 4
+    for index, entry in enumerate(result["value"]):
+        assert "_runIdSynthesised" not in entry, "private hint leaked on entry {}".format(index)
+        assert entry["runId"] == "run{}".format(index)
+    assert "value[].runId" in result["synthesised"]["fields"]
+
+
+def test_trigger_history_list_reports_synthesis_when_only_a_later_entry_is_synthesised():
+    # The disclosure must not depend on entry ORDER either: the first entry has
+    # no run reference at all, so the flag it contributes is False. If the scan
+    # stopped early or looked only at entry 0, ``value[].runId`` would be
+    # silently omitted and the CLI would under-disclose its own synthesis.
+    client = _Client({
+        "value": [
+            {"name": "hist0", "properties": {"status": "Skipped", "fired": False}},
+            {
+                "name": "hist1",
+                "properties": {
+                    "status": "Succeeded",
+                    "fired": True,
+                    "run": {"id": "/subscriptions/sub/resourceGroups/rg/providers/Microsoft.Logic/workflows/wf/runs/run1"},
+                },
+            },
+        ]
+    })
+
+    result = trigger_history_list(_Cmd(), "rg", "site", "wf", "manual", client=client)
+
+    assert result["value"][0]["runId"] is None
+    assert result["value"][1]["runId"] == "run1"
+    for entry in result["value"]:
+        assert "_runIdSynthesised" not in entry
+    assert "value[].runId" in result["synthesised"]["fields"]
+
+
 def test_trigger_history_show_calls_single_entry_route_and_uses_entry_schema():
     client = _Client({"name": "hist1", "properties": {"status": "Succeeded", "run": {"name": "run1"}}})
 
