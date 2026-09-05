@@ -104,7 +104,7 @@ TRIGGER_HISTORY_RESUBMIT_MANIFEST = {
     "credentialBearing": False,
     "delegatedTo": None,
     "gap": (
-        "Server accepts one historyName per resubmit by source read; CLI loops over one-or-more "
+        "Server accepts one historyName per resubmit; CLI loops over one-or-more "
         "--history-ids values and reports an aggregated outcome. Multi-ID server support remains "
         "unresolved pending live observation."
     ),
@@ -290,7 +290,7 @@ def _resubmit_result(outcomes):
         "synthesised": {
             "fields": ["value[]", "value[].historyId", "value[].status when no platform status is returned", "value[].message"],
             "reason": (
-                "The platform resubmit route accepts one historyName by source read; the CLI loops "
+                "The platform resubmit route accepts one historyName; the CLI loops "
                 "over one-or-more --history-ids values and aggregates per-entry outcomes. Multi-ID "
                 "server support remains unresolved pending live observation."
             ),

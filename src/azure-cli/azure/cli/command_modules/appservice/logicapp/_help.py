@@ -278,7 +278,7 @@ helps['logicapp workflow trigger history resubmit'] = """
 type: command
 short-summary: Resubmit one or more workflow trigger history entries.
 long-summary: |
-  The platform route accepts one history id per request by source read. The CLI accepts one or
+  The platform route accepts one history id per request. The CLI accepts one or
   more --history-ids values, loops client-side, and returns per-entry outcomes; any failed
   entry makes the command fail overall. Multi-id server support remains unresolved until a
   live observation proves otherwise. --no-wait is exposed on this run-producing verb per CLI
