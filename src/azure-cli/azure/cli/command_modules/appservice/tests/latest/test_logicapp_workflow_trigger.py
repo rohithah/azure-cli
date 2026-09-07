@@ -273,15 +273,17 @@ def test_trigger_help_registered_in_knack_help_files_reaches_disclosure_strings(
     assert "runId: null" in trigger_run_help
     assert "manual workaround: record the request time" in trigger_run_help
     assert "concurrent trigger firings it can attribute the wrong run" in trigger_run_help
-    # `--no-wait` is exposed on run-producing verbs per CLI convention and per
-    # the design doc directive.  The help must document that today the call is
-    # fire-and-forget by construction (no in-CLI polling loop), and that a
-    # matching ``wait`` verb has not been shipped.  If a future rev drops the
-    # flag or replaces this language with "no synchronous wait endpoint exists"
-    # (the false claim independent review caught), this assertion will fire.
-    assert "--no-wait is exposed" in trigger_run_help
+    # `--no-wait` was dropped before merge (engineer ruling, 2026-09-07). It was a
+    # no-op: the CLI returns as soon as the platform accepts the trigger whether or
+    # not the flag was passed, and no matching ``wait`` verb exists anywhere in the
+    # appservice module. The help must still document the fire-and-forget behaviour
+    # -- that part was always true and callers depend on it -- but must no longer
+    # advertise a flag the command does not accept. If a future rev re-adds the flag
+    # without also shipping a ``wait`` verb, this assertion will fire.
+    assert "--no-wait" not in trigger_run_help
     assert "fire-and-forget" in trigger_run_help
-    assert "matching `wait` verb has not been shipped" in trigger_run_help
+    assert "does not poll for terminal state" in trigger_run_help
+    assert "No `wait` verb is shipped" in trigger_run_help
 
 
 # Review fix: reclassify H3 as an instance of the known defect class

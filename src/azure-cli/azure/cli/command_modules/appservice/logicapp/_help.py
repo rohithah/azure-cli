@@ -215,10 +215,8 @@ long-summary: |
   does not return x-ms-workflow-run-id or a body run id, the CLI returns runId: null and says
   the new run id is unknown; the CLI will not infer or fabricate a run id, and it does not
   infer one from latest-run polling. No deterministic follow-up run id is available from that
-  response. --no-wait is exposed on this run-producing
-  verb per CLI convention and today marks the call as explicitly fire-and-forget: the CLI
-  returns as soon as the platform accepts the trigger and does not poll for terminal state
-  whether --no-wait is set or not. A matching `wait` verb has not been shipped in this port;
+  response. This command is fire-and-forget: the CLI returns as soon as the platform accepts
+  the trigger and does not poll for terminal state. No `wait` verb is shipped in this port;
   request triggers do return an x-ms-workflow-run-id that a future `wait` could poll (see the
   finding on file), but shipping that verb requires minting a new capability id and is left
   to a follow-up decision. Optional
@@ -285,11 +283,10 @@ long-summary: |
   The platform route accepts one history id per request. The CLI accepts one or
   more --history-ids values, loops client-side, and returns per-entry outcomes; any failed
   entry makes the command fail overall. Multi-id server support remains unresolved until a
-  live observation proves otherwise. --no-wait is exposed on this run-producing verb per CLI
-  convention and today marks the call as explicitly fire-and-forget: each per-history-id POST
+  live observation proves otherwise. This command is fire-and-forget: each per-history-id POST
   returns as soon as the platform accepts the resubmit, and the CLI does not poll for terminal
-  state whether --no-wait is set or not. A matching `wait` verb has not been shipped in this
-  port; shipping one requires minting a new capability id and is left to a follow-up decision.
+  state. No `wait` verb is shipped in this port; adding one requires minting a new capability
+  id and is left to a follow-up decision.
 examples:
   - name: Resubmit two trigger history entries.
     text: az logicapp workflow trigger history resubmit -g rg -n app --workflow wf --trigger manual --history-ids hist1 hist2

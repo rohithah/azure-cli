@@ -185,7 +185,7 @@ def trigger_show_callback_url(cmd, resource_group_name, name, workflow, trigger,
     }
 
 
-def trigger_run(cmd, resource_group_name, name, workflow, trigger, payload_file=None, no_wait=False, client=None):  # pylint: disable=unused-argument
+def trigger_run(cmd, resource_group_name, name, workflow, trigger, payload_file=None, client=None):
     client = client or _client(cmd, resource_group_name, name)
     body = _load_payload_file(payload_file) if payload_file else None
     response = _post_with_headers(client, trigger_run_path(workflow, trigger), body=body)

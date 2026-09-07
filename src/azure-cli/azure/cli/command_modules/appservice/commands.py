@@ -742,7 +742,7 @@ def _register_logicapp_workflow_commands(loader,
         attach_manifest(loader, 'logicapp workflow trigger show-schema', _trigger.TRIGGER_SHOW_SCHEMA_MANIFEST)
         g.custom_command('show-callback-url', 'trigger_show_callback_url', table_transformer=_trigger.trigger_callback_url_table_format)
         attach_manifest(loader, 'logicapp workflow trigger show-callback-url', _trigger.TRIGGER_SHOW_CALLBACK_URL_MANIFEST)
-        g.custom_command('run', 'trigger_run', supports_no_wait=True, table_transformer=_trigger.trigger_run_table_format)
+        g.custom_command('run', 'trigger_run', table_transformer=_trigger.trigger_run_table_format)
         attach_manifest(loader, 'logicapp workflow trigger run', _trigger.TRIGGER_RUN_MANIFEST)
 
     with loader.command_group('logicapp workflow trigger history', custom_command_type=logicapp_trigger_history_custom) as g:
@@ -754,7 +754,7 @@ def _register_logicapp_workflow_commands(loader,
         attach_manifest(loader, 'logicapp workflow trigger history show-inputs', _trigger_history.TRIGGER_HISTORY_SHOW_INPUTS_MANIFEST)
         g.custom_command('show-outputs', 'trigger_history_show_outputs', table_transformer=_trigger_history.trigger_history_entry_table_format)
         attach_manifest(loader, 'logicapp workflow trigger history show-outputs', _trigger_history.TRIGGER_HISTORY_SHOW_OUTPUTS_MANIFEST)
-        g.custom_command('resubmit', 'trigger_history_resubmit', supports_no_wait=True, table_transformer=_trigger_history.trigger_history_table_format)
+        g.custom_command('resubmit', 'trigger_history_resubmit', table_transformer=_trigger_history.trigger_history_table_format)
         attach_manifest(loader, 'logicapp workflow trigger history resubmit', _trigger_history.TRIGGER_HISTORY_RESUBMIT_MANIFEST)
 
     with loader.command_group('logicapp workflow mock', custom_command_type=logicapp_run_unit_test_custom) as g:

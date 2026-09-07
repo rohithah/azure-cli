@@ -167,7 +167,7 @@ def trigger_history_show_outputs(cmd, resource_group_name, name, workflow, trigg
     return _show_content(cmd, resource_group_name, name, workflow, trigger, history_id, "outputs", client=client)
 
 
-def trigger_history_resubmit(cmd, resource_group_name, name, workflow, trigger, history_ids, no_wait=False, client=None):  # pylint: disable=unused-argument
+def trigger_history_resubmit(cmd, resource_group_name, name, workflow, trigger, history_ids, client=None):
     client = client or _client(cmd, resource_group_name, name)
     ids = history_ids if isinstance(history_ids, list) else [history_ids]
     outcomes = []

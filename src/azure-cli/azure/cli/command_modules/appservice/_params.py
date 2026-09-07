@@ -1699,8 +1699,6 @@ subscription than the app service environment, please use the resource ID for --
     with self.argument_context('logicapp workflow trigger run') as c:
         c.argument('payload_file', options_list=['--payload-file'],
                    help='Optional JSON file to send as the trigger request payload.')
-        c.argument('no_wait', options_list=['--no-wait'], action='store_true',
-                   help='Do not wait on the trigger run to reach a terminal state. Today this call is fire-and-forget by construction (the CLI returns as soon as the platform accepts the trigger); the flag is exposed per CLI convention for run-producing verbs and to make the intent explicit.')
 
     for command_name in (
         'logicapp workflow trigger history list',
@@ -1740,8 +1738,6 @@ subscription than the app service environment, please use the resource ID for --
     with self.argument_context('logicapp workflow trigger history resubmit') as c:
         c.argument('history_ids', options_list=['--history-ids'], nargs='+',
                    help='One or more trigger history entry ids to resubmit.')
-        c.argument('no_wait', options_list=['--no-wait'], action='store_true',
-                   help='Do not wait on the resubmitted runs to reach a terminal state. Today the per-history-id POST is fire-and-forget by construction (the CLI returns as soon as the platform accepts the resubmit); the flag is exposed per CLI convention for run-producing verbs and to make the intent explicit.')
 
     with self.argument_context('logicapp workflow mock list') as c:
         c.argument('http', options_list=['--http'], action='store_true',
