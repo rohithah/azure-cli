@@ -15,7 +15,7 @@ inside each command body, not by carrying a ``--content-name`` argument forward.
 
 import json
 
-from azure.cli.core.azclierror import AzureResponseError
+from azure.cli.core.azclierror import AzureResponseError, ResourceNotFoundError
 from azure.cli.core.commands.client_factory import get_subscription_id
 
 from ._refusal_seam import REFUSAL_KIND_DESIGN, emit_refusal
@@ -24,6 +24,7 @@ from ._runtime_client import (
     trigger_histories_path,
     trigger_history_path,
     trigger_history_resubmit_path,
+    workflow_trigger_path,
 )
 
 TRIGGER_HISTORY_SCHEMA_VERSION = "logicapp.trigger-history/2026-08-29"
@@ -174,6 +175,7 @@ def trigger_history_resubmit(cmd, resource_group_name, name, workflow, trigger, 
     ids = history_ids if isinstance(history_ids, list) else [history_ids]
     outcomes = []
     failures = []
+    saw_not_found = False
     for item in ids:
         try:
             response = client.post_with_headers(trigger_history_resubmit_path(workflow, trigger, item))
@@ -182,6 +184,8 @@ def trigger_history_resubmit(cmd, resource_group_name, name, workflow, trigger, 
             if _is_failure_outcome(outcome):
                 failures.append(outcome)
         except Exception as ex:  # pylint: disable=broad-except
+            if isinstance(ex, ResourceNotFoundError):
+                saw_not_found = True
             outcome = {
                 "historyId": item,
                 "runId": None,
@@ -190,6 +194,13 @@ def trigger_history_resubmit(cmd, resource_group_name, name, workflow, trigger, 
             }
             outcomes.append(outcome)
             failures.append(outcome)
+    if saw_not_found:
+        # A 404 on the resubmit route means either the history entry is missing
+        # -- a per-entry outcome that belongs in the aggregate -- or the whole
+        # target is missing. Read the trigger to tell them apart so a missing
+        # workflow or trigger keeps az's exit 3 instead of being flattened into
+        # an aggregate failure.
+        client.get(workflow_trigger_path(workflow, trigger))
     result = _resubmit_result(outcomes)
     if failures:
         raise AzureResponseError("Trigger history resubmit completed with {} failure(s): {}".format(len(failures), json.dumps(result, separators=(",", ":"))))

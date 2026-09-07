@@ -22,7 +22,7 @@ import json
 
 import pytest
 
-from azure.cli.core.azclierror import AzureResponseError
+from azure.cli.core.azclierror import AzureResponseError, ResourceNotFoundError
 from azure.cli.core.mock import DummyCli
 
 from azure.cli.command_modules.appservice.logicapp._exceptions import DesignRefusalError
@@ -52,6 +52,8 @@ class _Client:
 
     def get(self, path, params=None):
         self.calls.append(("get", path, params))
+        if isinstance(self.payload, Exception):
+            raise self.payload
         return self.payload
 
     def list(self, path, params=None, continuation_token=None, max_items=None):
@@ -383,3 +385,39 @@ def test_trigger_history_resubmit_partial_failure_raises_with_per_entry_outcomes
     assert aggregate["value"][1]["historyId"] == "hist2"
     assert aggregate["value"][1]["status"] == "Failed"
     assert "boom" in aggregate["value"][1]["message"]
+
+
+def test_trigger_history_resubmit_reports_not_found_when_the_trigger_is_missing():
+    """A missing workflow or trigger is a precondition on the whole command.
+
+    Flattening it into the per-entry aggregate would exit 1 and tell the caller
+    the resubmit was attempted against a target that never existed.  The command
+    reads the trigger once, only after a not-found, so a missing target keeps
+    az's exit-3 contract.
+    """
+    client = _Client(
+        ResourceNotFoundError("workflow not found"),
+        post_results=[ResourceNotFoundError("workflow not found")])
+
+    with pytest.raises(ResourceNotFoundError):
+        trigger_history_resubmit(_Cmd(), "rg", "site", "ghost", "manual", ["hist1"], client=client)
+
+    assert client.calls[-1] == ("get", "workflows/ghost/triggers/manual", None)
+
+
+def test_trigger_history_resubmit_aggregates_when_only_the_history_entry_is_missing():
+    """A missing history id is a genuine per-entry outcome, not a bad target.
+
+    The trigger reads back, so the aggregate payload is preserved and the
+    command still fails as an aggregate rather than claiming not-found.
+    """
+    client = _Client(
+        {"name": "manual"},
+        post_results=[ResourceNotFoundError("history not found")])
+
+    with pytest.raises(AzureResponseError) as exc_info:
+        trigger_history_resubmit(_Cmd(), "rg", "site", "wf", "manual", ["nosuch"], client=client)
+
+    aggregate = json.loads(str(exc_info.value)[str(exc_info.value).index("{"):])
+    assert aggregate["value"][0]["historyId"] == "nosuch"
+    assert aggregate["value"][0]["status"] == "Failed"

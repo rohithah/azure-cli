@@ -116,6 +116,16 @@ class SiteRuntimeClient:
     def post_with_headers(self, relative_path, body=None, params=None):
         return self.request_with_headers("POST", relative_path, body=body, params=params)
 
+    def post_raw(self, relative_path, body=None, params=None):
+        """POST returning the raw response body.
+
+        Routed through the same sender as every other request so a 404 is
+        translated to ``ResourceNotFoundError``; callers that reach the sender
+        directly bypass that translation and surface a not-found as exit 1.
+        """
+        response = self._send("POST", self._build_url(relative_path, params=params), body=body)
+        return getattr(response, "content", b"") or b""
+
     def get_raw_url(self, url, max_bytes=None):
         headers = ["Content-Type=application/json"]
         if max_bytes is not None:
@@ -145,9 +155,14 @@ class SiteRuntimeClient:
 
     def request_with_headers(self, method, relative_path, body=None, params=None, prefix=_MANAGEMENT_PREFIX):
         url = self._build_url(relative_path, params=params, prefix=prefix)
+        response = self._send(method, url, body=body)
+        payload = response.json() if getattr(response, "content", None) else None
+        return {"payload": payload, "headers": getattr(response, "headers", {}) or {}}
+
+    def _send(self, method, url, body=None):
         serialized = json.dumps(body) if body is not None else None
         try:
-            response = self._sender(
+            return self._sender(
                 self.cmd.cli_ctx,
                 method,
                 url,
@@ -159,8 +174,6 @@ class SiteRuntimeClient:
             if status_code == 404 and self._not_found_as_resource:
                 raise ResourceNotFoundError(str(ex)) from ex
             raise
-        payload = response.json() if getattr(response, "content", None) else None
-        return {"payload": payload, "headers": getattr(response, "headers", {}) or {}}
 
     def _build_url(self, relative_path, params=None, prefix=_MANAGEMENT_PREFIX):
         path = str(relative_path).strip("/")

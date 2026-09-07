@@ -154,6 +154,29 @@ def test_runtime_client_maps_404_to_resource_not_found_without_refusal_marker():
     assert "AZ_LOGICAPP_REFUSAL" not in str(exc_info.value)
 
 
+def test_runtime_client_post_raw_maps_404_to_resource_not_found():
+    """``unit-test create`` streams a raw zip and must still honour exit 3.
+
+    Reaching the sender directly to collect raw bytes skips the 404 translation
+    and surfaces a missing workflow as a generic failure (exit 1), so the raw
+    POST goes through the same send path as every other request.
+    """
+    def sender(*_args, **_kwargs):
+        raise HTTPError("Not Found", _HttpResponse())
+
+    client = SiteRuntimeClient(_Cmd(), _SITE_ID, sender=sender)
+    with pytest.raises(ResourceNotFoundError):
+        client.post_raw("workflows/missing/runs/missing/generateUnitTest", body={"UnitTestName": "t"})
+
+
+def test_runtime_client_post_raw_returns_response_bytes():
+    def sender(*_args, **_kwargs):
+        return _Response(None)
+
+    client = SiteRuntimeClient(_Cmd(), _SITE_ID, sender=sender)
+    assert client.post_raw("workflows/wf/runs/r/generateUnitTest", body={"UnitTestName": "t"}) == b""
+
+
 def test_runtime_client_post_with_headers_returns_empty_body_headers():
     def sender(*_args, **_kwargs):
         return _Response(None, headers={"x-ms-workflow-run-id": "run2"})

@@ -168,7 +168,9 @@ def test_trigger_show_schema_maps_request_trigger_schema():
 
 
 def test_trigger_show_schema_404_refuses_with_cause_and_alternative_for_non_request_triggers():
-    client = _Client([ResourceNotFoundError("not found")])
+    # The schema route 404s, but the trigger itself reads back, so the trigger
+    # exists and simply exposes no request schema: a capability refusal.
+    client = _Client([ResourceNotFoundError("not found"), {"name": "recurrence"}])
 
     with pytest.raises(DesignRefusalError) as raised:
         trigger_show_schema(_Cmd(), "rg", "site", "wf", "recurrence", client=client)
@@ -177,6 +179,25 @@ def test_trigger_show_schema_404_refuses_with_cause_and_alternative_for_non_requ
     assert "AZ_LOGICAPP_REFUSAL" in message
     assert "only request triggers expose a JSON request schema" in message
     assert "trigger show" in message
+
+
+def test_trigger_show_schema_404_reports_not_found_when_the_trigger_is_missing():
+    """A missing workflow or trigger must keep az's exit-3 not-found contract.
+
+    The schema route answers 404 for two different situations, so the command
+    reads the trigger to tell them apart.  Refusing here instead would claim the
+    trigger exists but has no schema, which is a false statement about a
+    resource that is not there.
+    """
+    client = _Client([ResourceNotFoundError("not found"), ResourceNotFoundError("not found")])
+
+    with pytest.raises(ResourceNotFoundError):
+        trigger_show_schema(_Cmd(), "rg", "site", "wf", "ghost", client=client)
+
+    assert client.calls == [
+        ("get", "workflows/wf/triggers/ghost/schemas/json", None),
+        ("get", "workflows/wf/triggers/ghost", None),
+    ]
 
 
 def test_trigger_show_callback_url_maps_platform_value_to_unredacted_callback_url():

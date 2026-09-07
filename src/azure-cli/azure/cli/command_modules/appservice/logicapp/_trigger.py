@@ -158,6 +158,13 @@ def trigger_show_schema(cmd, resource_group_name, name, workflow, trigger, clien
         schema = client.get(trigger_schema_path(workflow, trigger))
     except (ResourceNotFoundError, HTTPError) as ex:
         if isinstance(ex, ResourceNotFoundError) or _status_code(ex) == 404:
+            # The schema route answers 404 both when the workflow or trigger is
+            # missing and when the trigger exists but exposes no request schema.
+            # Read the trigger itself to tell them apart: a missing resource
+            # propagates ResourceNotFoundError (exit 3, per the az show rule),
+            # while an existing trigger means the schema is genuinely absent and
+            # the capability refusal is the truthful answer.
+            client.get(workflow_trigger_path(workflow, trigger))
             emit_refusal(
                 kind=REFUSAL_KIND_DESIGN,
                 capability_id="CM-014",
