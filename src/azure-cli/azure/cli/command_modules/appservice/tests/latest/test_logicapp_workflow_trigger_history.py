@@ -245,7 +245,7 @@ def test_trigger_history_show_calls_single_entry_route_and_uses_entry_schema():
     assert client.calls == [("get", "workflows/wf/triggers/manual/histories/hist1", {"$expand": "run/properties"})]
     assert result["historyId"] == "hist1"
     assert result["runId"] == "run1"
-    assert result["synthesised"]["fields"] == ["workflow", "trigger", "historyId", "runId"]
+    assert result["synthesised"]["fields"] == ["workflow", "trigger", "historyId", "runId", "workflowVersion"]
     assert "_runIdSynthesised" not in result
 
 

@@ -218,9 +218,73 @@ def test_trigger_history_list_hoists_the_executed_workflow_version():
 
 
 def test_trigger_history_show_hoists_the_executed_workflow_version():
+    # NOTE: this proves the hoist logic, not that the data arrives. The
+    # platform's singular history route can return `run` without the nested
+    # `properties.workflow` object even though the CLI requests
+    # $expand=run/properties -- see the asymmetry test below. A synthetic
+    # payload that always carries the version would hide that entirely.
     client = _Client([_history_entry(_LIVE_VERSION_OBJECT)])
     result = trigger_history_show(_Cmd(), "rg", "app", "specDemo", "manual", "hist1", client=client)
     assert result["workflowVersion"] == "08584129710997436905"
+
+
+def test_trigger_history_show_declares_workflow_version_in_its_disclosure():
+    # The payload and the disclosure must agree. `show` emitted workflowVersion
+    # while omitting it from synthesised.fields -- a disclosure that contradicts
+    # the payload, on the one field whose honesty is the basis of the
+    # no-fabrication guarantee.
+    client = _Client([_history_entry(_LIVE_VERSION_OBJECT)])
+    result = trigger_history_show(_Cmd(), "rg", "app", "specDemo", "manual", "hist1", client=client)
+    assert "workflowVersion" in result["synthesised"]["fields"]
+    # Declared even when the platform supplied nothing: the top-level field is
+    # CLI-added either way, so its provenance always needs disclosing.
+    client = _Client([_history_entry(None)])
+    result = trigger_history_show(_Cmd(), "rg", "app", "specDemo", "manual", "hist1", client=client)
+    assert result["workflowVersion"] is None
+    assert "workflowVersion" in result["synthesised"]["fields"]
+
+
+def test_both_leaves_declare_every_cli_added_field_they_emit():
+    # Structural guard for the whole class, not just workflowVersion. Any
+    # top-level key the CLI synthesises or hoists must appear in
+    # synthesised.fields. `show` previously emitted workflowVersion without
+    # declaring it and nothing caught the drift, because every existing test
+    # checked one named field at a time.
+    #
+    # historyId is included only because this entry's platform name matches the
+    # requested id, which is the case in which the CLI projects it. When they
+    # differ the value came from the platform resource name and is correctly
+    # left undeclared -- so the set below is the always-CLI-added set plus that
+    # one conditional field, deliberately exercised in its declared state.
+    cli_added = {"workflow", "trigger", "historyId", "workflowVersion"}
+    entry_id = "08584129710997436905"
+
+    show_client = _Client([_history_entry(_LIVE_VERSION_OBJECT)])
+    shown = trigger_history_show(_Cmd(), "rg", "app", "specDemo", "manual", entry_id, client=show_client)
+    declared = set(shown["synthesised"]["fields"])
+    assert cli_added <= declared, "undeclared CLI-added fields on show: {}".format(cli_added - declared)
+
+    list_client = _Client([{"value": [_history_entry(_LIVE_VERSION_OBJECT)]}])
+    listed = trigger_history_list(_Cmd(), "rg", "app", "specDemo", "manual", client=list_client)
+    declared = {field.replace("value[].", "") for field in listed["synthesised"]["fields"]}
+    assert cli_added <= declared, "undeclared CLI-added fields on list: {}".format(cli_added - declared)
+
+
+def test_singular_history_route_may_omit_the_version_and_the_disclosure_says_so():
+    # Live-observed platform asymmetry: for the SAME history entry, the
+    # collection route returns run.properties.workflow while the singular route
+    # returns only run.id. The CLI sends $expand=run/properties on both, so this
+    # is platform behaviour, not CLI wiring. A caller who hits null on `show`
+    # needs to be told the value is recoverable from `list` rather than
+    # concluding the run has no version.
+    client = _Client([{"name": "hist1", "properties": {"status": "Failed", "run": {"id": "/workflows/specDemo/runs/0858"}}}])
+    result = trigger_history_show(_Cmd(), "rg", "app", "specDemo", "manual", "hist1", client=client)
+
+    assert result["workflowVersion"] is None
+    assert client.calls[0][2] == {"$expand": "run/properties"}
+    reason = result["synthesised"]["reason"]
+    assert "copied verbatim" in reason
+    assert "trigger history list" in reason
 
 
 def test_workflow_version_falls_back_to_the_resource_id_when_name_is_absent():
