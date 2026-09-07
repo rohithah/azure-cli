@@ -116,7 +116,7 @@ def trigger_history_list(cmd, resource_group_name, name, workflow, trigger, max_
     payload = client.list(trigger_histories_path(workflow, trigger), params={"$expand": "run/properties"}, continuation_token=next_token, max_items=max_items)
     items = [_apply_content_link_redaction(_history_response(item, workflow, trigger), show_content_urls)
              for item in _value(payload)]
-    fields = ["value[].workflow", "value[].trigger", "value[].historyId"]
+    fields = ["value[].workflow", "value[].trigger", "value[].historyId", "value[].workflowVersion"]
     run_id_synthesised = [item.pop("_runIdSynthesised", False) for item in items]
     if any(run_id_synthesised):
         fields.append("value[].runId")
@@ -401,6 +401,34 @@ def _run_id_from_text(value):
     return None
 
 
+def _workflow_version(run):
+    """Hoist the executed workflow-version identity out of the nested run object.
+
+    The platform reports the version a run was pinned to at
+    ``run.properties.workflow`` as ``{id, name, type}`` -- for example
+    ``{"id": "/workflows/specDemo/versions/08584129710997436905",
+       "name": "08584129710997436905", "type": "workflows/versions"}``.
+
+    A run executes the workflow version that was current when it started, so a
+    workflow redeployed after the run means the current definition is NOT the
+    one that produced this history entry. Surfacing the version at the top level
+    keeps that distinction visible without requiring the caller to know the
+    nested shape. The value is copied from the platform payload -- never
+    inferred, and ``None`` when the platform did not supply it.
+    """
+    props = _properties(run or {})
+    workflow_ref = _field(props, "workflow")
+    if not isinstance(workflow_ref, dict):
+        return None
+    return _field(workflow_ref, "name") or _version_from_text(_field(workflow_ref, "id"))
+
+
+def _version_from_text(value):
+    if isinstance(value, str) and "/versions/" in value.lower():
+        return value.rstrip("/").split("/")[-1]
+    return None
+
+
 def _run_reference_state(props, run, run_id):
     if run_id:
         return "returned-inline"
@@ -460,6 +488,7 @@ def _history_response(raw, workflow, trigger):
         "correlation": _field(props, "correlation"),
         "run": run,
         "runId": run_id,
+        "workflowVersion": _workflow_version(run),
         "runReferenceState": _run_reference_state(props, run, run_id),
         "_runIdSynthesised": bool(referenced_run_id),
         "inputsLink": _field(props, "inputsLink"),

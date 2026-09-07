@@ -215,6 +215,7 @@ def load_command_table(self, _):
     logicapp_trigger_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._trigger#{}')
     logicapp_trigger_history_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._trigger_history#{}')
     logicapp_run_unit_test_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._run_unit_test#{}')
+    logicapp_version_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._version#{}')
 
     webapp_exec_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.webapp_exec#{}')
 
@@ -715,13 +716,15 @@ def load_command_table(self, _):
         logicapp_trigger_custom,
         logicapp_trigger_history_custom,
         logicapp_run_unit_test_custom,
+        logicapp_version_custom,
     )
 
 
 def _register_logicapp_workflow_commands(loader,
                                          logicapp_trigger_custom,
                                          logicapp_trigger_history_custom,
-                                         logicapp_run_unit_test_custom):
+                                         logicapp_run_unit_test_custom,
+                                         logicapp_version_custom):
     """Register the M2 workflow surface (triggers, trigger history, mock catalog, unit-test).
 
     Registration is flattened here (per core convention: zero per-noun ``register_commands``
@@ -731,7 +734,13 @@ def _register_logicapp_workflow_commands(loader,
     a new ``command_group`` decorator kwarg.
     """
     from azure.cli.command_modules.appservice.logicapp._manifest import attach_manifest
-    from azure.cli.command_modules.appservice.logicapp import _trigger, _trigger_history, _run_unit_test
+    from azure.cli.command_modules.appservice.logicapp import _trigger, _trigger_history, _run_unit_test, _version
+
+    with loader.command_group('logicapp workflow version', custom_command_type=logicapp_version_custom) as g:
+        g.custom_command('list', 'version_list', table_transformer=_version.version_list_table_format)
+        attach_manifest(loader, 'logicapp workflow version list', _version.VERSION_LIST_MANIFEST)
+        g.custom_show_command('show', 'version_show', table_transformer=_version.version_show_table_format)
+        attach_manifest(loader, 'logicapp workflow version show', _version.VERSION_SHOW_MANIFEST)
 
     with loader.command_group('logicapp workflow trigger', custom_command_type=logicapp_trigger_custom) as g:
         g.custom_command('list', 'trigger_list', table_transformer=_trigger.trigger_list_table_format)

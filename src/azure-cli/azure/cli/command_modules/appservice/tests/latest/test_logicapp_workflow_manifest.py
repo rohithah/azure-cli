@@ -109,7 +109,7 @@ def test_registration_helper_attaches_inline_row():
     assert collect_manifest_rows(loader.command_table) == [_VALID_ROW]
 
 
-def test_all_twelve_m2_commands_carry_valid_manifest_rows_and_expected_capability_ids():
+def test_all_m2_commands_carry_valid_manifest_rows_and_expected_capability_ids():
     """Real content check on the shipped workflow surface.
 
     Any manifest row that fails to validate, any missing command, or any
@@ -137,6 +137,8 @@ def test_all_twelve_m2_commands_carry_valid_manifest_rows_and_expected_capabilit
         ("CM-017", "logicapp workflow trigger history resubmit"),
         ("CM-018", "logicapp workflow mock list"),
         ("CM-020", "logicapp workflow unit-test create"),
+        ("CM-021-list", "logicapp workflow version list"),
+        ("CM-021-show", "logicapp workflow version show"),
     }
     assert m2_pairs == expected, "shipped workflow manifest surface diverged from expected"
 

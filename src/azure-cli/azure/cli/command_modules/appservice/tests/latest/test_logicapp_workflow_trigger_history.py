@@ -106,7 +106,7 @@ def test_trigger_history_list_calls_site_runtime_histories_route_and_maps_contra
     assert result["nextLink"] == "https://example.invalid/next"
     assert result["nextContinuationToken"] is None
     assert result["synthesised"]["fields"] == [
-        "value[].workflow", "value[].trigger", "value[].historyId",
+        "value[].workflow", "value[].trigger", "value[].historyId", "value[].workflowVersion",
         "value[].runId", "nextContinuationToken"]
     assert result["synthesised"]["clientSidePaging"] is True
     assert "applied by the CLI" in result["synthesised"]["reason"]
@@ -126,6 +126,7 @@ def test_trigger_history_list_calls_site_runtime_histories_route_and_maps_contra
         "correlation": {"clientTrackingId": "client"},
         "run": {"name": "run1"},
         "runId": "run1",
+        "workflowVersion": None,
         "runReferenceState": "returned-inline",
         "inputsLink": {"uri": "<redacted-by-az-logicapp-cli>"},
         "outputsLink": {"uri": "<redacted-by-az-logicapp-cli>"},

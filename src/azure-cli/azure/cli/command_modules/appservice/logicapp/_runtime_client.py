@@ -29,6 +29,14 @@ def workflow_triggers_path(workflow):
     return "workflows/{}/triggers".format(_quote_segment(workflow))
 
 
+def workflow_versions_path(workflow):
+    return "workflows/{}/versions".format(_quote_segment(workflow))
+
+
+def workflow_version_path(workflow, version):
+    return "{}/{}".format(workflow_versions_path(workflow), _quote_segment(version))
+
+
 def workflow_trigger_path(workflow, trigger):
     return "{}/{}".format(workflow_triggers_path(workflow), _quote_segment(trigger))
 

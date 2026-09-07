@@ -292,6 +292,49 @@ examples:
     text: az logicapp workflow trigger history resubmit -g rg -n app --workflow wf --trigger manual --history-ids hist1 hist2
 """
 
+helps['logicapp workflow version'] = """
+type: group
+short-summary: Inspect deployed versions of a Logic App Standard workflow.
+long-summary: |
+  Deploying changed content over an existing workflow creates a new workflow version
+  rather than replacing the previous one. Runs already in flight continue on the version
+  they started under, and new runs use the latest version. A run is therefore pinned to
+  the version that was current when it started, which means the workflow definition
+  deployed today is not necessarily the definition that produced an older run.
+  Use these commands to list the versions the platform holds and to fetch the definition
+  for a specific one, so a historical run can be diagnosed against the definition that
+  actually executed. The workflowVersion field on a trigger history entry reports which
+  version that entry ran under.
+"""
+
+helps['logicapp workflow version list'] = """
+type: command
+short-summary: List the deployed versions of a workflow.
+long-summary: Reads the site-runtime versions route for one workflow and returns version metadata, newest first as ordered by the platform. Definitions are omitted from the listing; use "az logicapp workflow version show" to fetch the definition for a specific version. Supports --max-items and --next-token as CLI client-side paging over the returned collection; the service is still read as one collection.
+examples:
+  - name: List the versions of a workflow.
+    text: az logicapp workflow version list -g rg -n app --workflow wf
+  - name: List the two most recent versions.
+    text: az logicapp workflow version list -g rg -n app --workflow wf --max-items 2
+"""
+
+helps['logicapp workflow version show'] = """
+type: command
+short-summary: Show one deployed version of a workflow, including its definition.
+long-summary: |
+  Reads the site-runtime version route for one workflow and version identifier, and
+  returns the version metadata together with the workflow definition, parameters, and
+  connection references recorded for that version. Secure parameter values are not
+  expanded by the platform.
+  The version identifier is the value reported by "az logicapp workflow version list",
+  and is also reported as the workflowVersion field on each entry returned by
+  "az logicapp workflow trigger history list" -- so a failed history entry can be taken
+  straight to the definition that produced it.
+examples:
+  - name: Show one workflow version.
+    text: az logicapp workflow version show -g rg -n app --workflow wf --version 08584129710997436905
+"""
+
 helps['logicapp workflow mock'] = """
 type: group
 short-summary: Inspect the global catalog of operation types the unit-test generator can mock.

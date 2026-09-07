@@ -1739,6 +1739,22 @@ subscription than the app service environment, please use the resource ID for --
         c.argument('history_ids', options_list=['--history-ids'], nargs='+',
                    help='One or more trigger history entry ids to resubmit.')
 
+    for command_name in (
+        'logicapp workflow version list',
+        'logicapp workflow version show',
+    ):
+        with self.argument_context(command_name) as c:
+            c.argument('workflow', options_list=['--workflow'], help='Workflow name.')
+    with self.argument_context('logicapp workflow version list') as c:
+        c.argument('max_items', options_list=['--max-items'], type=int, arg_group='Pagination',
+                   help='Maximum number of items to return from the client-side page.')
+        c.argument('next_token', options_list=['--next-token', '--continuation-token'], arg_group='Pagination',
+                   help='Continuation token returned by a previous version list call.')
+    with self.argument_context('logicapp workflow version show') as c:
+        c.argument('version', options_list=['--version'],
+                   help='Workflow version identifier, as reported by "az logicapp workflow version list" '
+                        'or by the workflowVersion field on a trigger history entry.')
+
     with self.argument_context('logicapp workflow mock list') as c:
         c.argument('http', options_list=['--http'], action='store_true',
                    help='Return only HTTP mockable operation types.')
