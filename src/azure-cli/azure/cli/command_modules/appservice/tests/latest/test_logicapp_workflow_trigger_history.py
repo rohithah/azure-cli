@@ -127,8 +127,8 @@ def test_trigger_history_list_calls_site_runtime_histories_route_and_maps_contra
         "run": {"name": "run1"},
         "runId": "run1",
         "runReferenceState": "returned-inline",
-        "inputsLink": {"uri": "https://example.invalid/inputs"},
-        "outputsLink": {"uri": "https://example.invalid/outputs"},
+        "inputsLink": {"uri": "<redacted-by-az-logicapp-cli>"},
+        "outputsLink": {"uri": "<redacted-by-az-logicapp-cli>"},
     }]
 
 
@@ -412,3 +412,88 @@ def test_trigger_history_resubmit_aggregates_when_only_the_history_entry_is_miss
     aggregate = json.loads(str(exc_info.value)[str(exc_info.value).index("{"):])
     assert aggregate["value"][0]["historyId"] == "nosuch"
     assert aggregate["value"][0]["status"] == "Failed"
+
+
+_SENTINEL = "<redacted-by-az-logicapp-cli>"
+
+
+def _entry_with_links():
+    return {
+        "name": "hist1",
+        "properties": {
+            "status": "Succeeded",
+            "inputsLink": {
+                "uri": "https://example.invalid/inputs?sig=secret",
+                "contentSize": 17,
+                "contentHash": {"algorithm": "md5", "value": "abc"},
+                "contentVersion": "1",
+            },
+            "outputsLink": {"uri": "https://example.invalid/outputs?sig=secret", "contentSize": 11},
+        },
+    }
+
+
+def test_trigger_history_show_withholds_content_uris_by_default():
+    client = _Client(_entry_with_links())
+
+    result = trigger_history_show(_Cmd(), "rg", "site", "wf", "manual", "hist1", client=client)
+
+    assert result["inputsLink"]["uri"] == _SENTINEL
+    assert result["outputsLink"]["uri"] == _SENTINEL
+    assert "sig=secret" not in json.dumps(result)
+
+
+def test_trigger_history_show_keeps_non_secret_link_metadata_when_redacting():
+    # Only the credential is withheld: size, hash and version still let a caller
+    # decide whether to fetch the content at all.
+    client = _Client(_entry_with_links())
+
+    link = trigger_history_show(_Cmd(), "rg", "site", "wf", "manual", "hist1", client=client)["inputsLink"]
+
+    assert link["contentSize"] == 17
+    assert link["contentHash"] == {"algorithm": "md5", "value": "abc"}
+    assert link["contentVersion"] == "1"
+
+
+def test_trigger_history_show_emits_content_uris_when_opted_in():
+    client = _Client(_entry_with_links())
+
+    result = trigger_history_show(_Cmd(), "rg", "site", "wf", "manual", "hist1",
+                                  show_content_urls=True, client=client)
+
+    assert result["inputsLink"]["uri"] == "https://example.invalid/inputs?sig=secret"
+    assert result["outputsLink"]["uri"] == "https://example.invalid/outputs?sig=secret"
+
+
+def test_trigger_history_list_withholds_content_uris_by_default():
+    client = _Client({"value": [_entry_with_links()]})
+
+    result = trigger_history_list(_Cmd(), "rg", "site", "wf", "manual", client=client)
+
+    assert result["value"][0]["inputsLink"]["uri"] == _SENTINEL
+    assert "sig=secret" not in json.dumps(result)
+
+
+def test_trigger_history_list_emits_content_uris_when_opted_in():
+    client = _Client({"value": [_entry_with_links()]})
+
+    result = trigger_history_list(_Cmd(), "rg", "site", "wf", "manual",
+                                  show_content_urls=True, client=client)
+
+    assert result["value"][0]["inputsLink"]["uri"] == "https://example.invalid/inputs?sig=secret"
+
+
+def test_show_inputs_still_follows_the_real_uri_under_default_redaction():
+    # show-inputs reads the history entry internally and then follows the content
+    # link. Redaction is a stdout concern only; if it applied to that internal read
+    # the CLI would try to fetch the sentinel string instead of the platform URI.
+    uri = "https://example.invalid/inputs?sig=secret"
+    client = _Client(
+        {"name": "hist1", "properties": {"status": "Succeeded", "inputsLink": {"uri": uri, "contentSize": 17}}},
+        raw={uri: {"content": b'{"greeting": "hi"}', "headers": {"content-type": "application/json"}}},
+    )
+
+    result = trigger_history_show_inputs(_Cmd(), "rg", "site", "wf", "manual", "hist1", client=client)
+
+    assert ("raw", uri, None) in client.calls
+    assert result["content"] == {"greeting": "hi"}

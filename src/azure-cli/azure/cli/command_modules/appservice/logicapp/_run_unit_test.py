@@ -27,6 +27,7 @@ from azure.cli.core.azclierror import CLIInternalError, FileOperationError, Vali
 from azure.cli.core.commands.client_factory import get_subscription_id
 from knack.log import get_logger
 
+from ._constants import LOGICAPP_REDACTION_SENTINEL
 from ._runtime_client import SiteRuntimeClient, generate_unit_test_path, mockable_operations_path
 
 MOCKABLE_OPERATION_LIST_SCHEMA_DOCUMENT_VERSION = "logicapp.mockable-operation-list-2026-08-29"
@@ -43,7 +44,7 @@ _GENERATED_ARTIFACT_WARNING = (
     "context headers are replaced with <redacted-by-az-logicapp-cli>. Treat any unredacted "
     "workflow data as local-only and review before committing to source control or CI artifacts."
 )
-_REDACTION_SENTINEL = "<redacted-by-az-logicapp-cli>"
+_REDACTION_SENTINEL = LOGICAPP_REDACTION_SENTINEL
 _REDACTION_METADATA_FIELD = "x-logicapp-cli-redaction"
 _REDACT_EXACT_HEADER_NAMES = {
     "x-ms-site-token",

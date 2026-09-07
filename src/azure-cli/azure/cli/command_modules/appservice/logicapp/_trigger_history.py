@@ -18,6 +18,7 @@ import json
 from azure.cli.core.azclierror import AzureResponseError, ResourceNotFoundError
 from azure.cli.core.commands.client_factory import get_subscription_id
 
+from ._constants import LOGICAPP_REDACTION_SENTINEL
 from ._refusal_seam import REFUSAL_KIND_DESIGN, emit_refusal
 from ._runtime_client import (
     SiteRuntimeClient,
@@ -110,10 +111,11 @@ TRIGGER_HISTORY_RESUBMIT_MANIFEST = {
 }
 
 
-def trigger_history_list(cmd, resource_group_name, name, workflow, trigger, max_items=None, next_token=None, client=None):
+def trigger_history_list(cmd, resource_group_name, name, workflow, trigger, max_items=None, next_token=None, show_content_urls=False, client=None):
     client = client or _client(cmd, resource_group_name, name)
     payload = client.list(trigger_histories_path(workflow, trigger), params={"$expand": "run/properties"}, continuation_token=next_token, max_items=max_items)
-    items = [_history_response(item, workflow, trigger) for item in _value(payload)]
+    items = [_apply_content_link_redaction(_history_response(item, workflow, trigger), show_content_urls)
+             for item in _value(payload)]
     fields = ["value[].workflow", "value[].trigger", "value[].historyId"]
     run_id_synthesised = [item.pop("_runIdSynthesised", False) for item in items]
     if any(run_id_synthesised):
@@ -135,10 +137,10 @@ def trigger_history_list(cmd, resource_group_name, name, workflow, trigger, max_
     }
 
 
-def trigger_history_show(cmd, resource_group_name, name, workflow, trigger, history_id, client=None):
+def trigger_history_show(cmd, resource_group_name, name, workflow, trigger, history_id, show_content_urls=False, client=None):
     client = client or _client(cmd, resource_group_name, name)
     payload = client.get(trigger_history_path(workflow, trigger, history_id), params={"$expand": "run/properties"})
-    result = _history_response(payload, workflow, trigger)
+    result = _apply_content_link_redaction(_history_response(payload, workflow, trigger), show_content_urls)
     run_id_synthesised = result.pop("_runIdSynthesised", False)
     if not result.get("historyId"):
         result["historyId"] = history_id
@@ -216,7 +218,11 @@ def trigger_history_entry_table_format(result):
 
 def _show_content(cmd, resource_group_name, name, workflow, trigger, history_id, content_name, client=None):
     client = client or _client(cmd, resource_group_name, name)
-    history = trigger_history_show(cmd, resource_group_name, name, workflow, trigger, history_id, client=client)
+    # show_content_urls=True because this call is internal: the content link is
+    # followed here rather than printed, so redacting it would make the fetch
+    # target the sentinel string instead of the platform URI.
+    history = trigger_history_show(cmd, resource_group_name, name, workflow, trigger, history_id,
+                                   show_content_urls=True, client=client)
     link = _content_link_or_refuse(history, content_name)
     raw_content = client.get_raw_url(link["uri"])
     content_bytes = raw_content.get("content") or b""
@@ -403,6 +409,33 @@ def _run_reference_state(props, run, run_id):
     if _field(props, "fired") is False:
         return "no-run-reference"
     return "not-returned-inline"
+
+
+def _redact_content_link(link):
+    """Return a content link with its pre-authorized URI withheld.
+
+    The platform's ``inputsLink``/``outputsLink`` objects carry a pre-authorized
+    (SAS-bearing) ``uri`` alongside non-secret descriptive fields such as content
+    size, hash and type. Only the credential is withheld, so callers keep the
+    metadata they need to decide whether to fetch, matching how
+    ``az logicapp config appsettings`` redacts values while keeping keys visible.
+    """
+    if not isinstance(link, dict):
+        return link
+    redacted = dict(link)
+    for key in list(redacted):
+        if str(key).lower() == "uri" and redacted[key]:
+            redacted[key] = LOGICAPP_REDACTION_SENTINEL
+    return redacted
+
+
+def _apply_content_link_redaction(entry, show_content_urls):
+    if show_content_urls:
+        return entry
+    for key in ("inputsLink", "outputsLink"):
+        if entry.get(key) is not None:
+            entry[key] = _redact_content_link(entry[key])
+    return entry
 
 
 def _history_response(raw, workflow, trigger):

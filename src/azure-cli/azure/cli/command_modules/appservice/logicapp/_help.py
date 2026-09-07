@@ -241,19 +241,23 @@ short-summary: Inspect Logic App Standard workflow trigger history.
 helps['logicapp workflow trigger history list'] = """
 type: command
 short-summary: List a workflow trigger's history entries.
-long-summary: Reads the site-runtime trigger histories route for one workflow and trigger. The command returns the platform history entry fields the runtime provides, including status, timestamps, tracking/correlation data, run reference, and content links when present. Supports --max-items and --next-token as CLI client-side paging over the returned collection; the service is still read as one collection.
+long-summary: Reads the site-runtime trigger histories route for one workflow and trigger. The command returns the platform history entry fields the runtime provides, including status, timestamps, tracking/correlation data, run reference, and content links when present. Content link URIs embed a SAS credential and are withheld by default; pass --show-content-urls to emit them in full. Supports --max-items and --next-token as CLI client-side paging over the returned collection; the service is still read as one collection.
 examples:
   - name: List trigger history entries.
     text: az logicapp workflow trigger history list -g rg -n app --workflow wf --trigger manual
+  - name: List trigger history entries including the pre-authorized content URIs.
+    text: az logicapp workflow trigger history list -g rg -n app --workflow wf --trigger manual --show-content-urls
 """
 
 helps['logicapp workflow trigger history show'] = """
 type: command
 short-summary: Show one workflow trigger history entry.
-long-summary: Reads the site-runtime trigger history route for one workflow, trigger, and history id. The command returns entry metadata only; use show-inputs or show-outputs to retrieve the raw inbound content.
+long-summary: Reads the site-runtime trigger history route for one workflow, trigger, and history id. The command returns entry metadata only; use show-inputs or show-outputs to retrieve the raw inbound content. Content link URIs embed a SAS credential and are withheld by default; pass --show-content-urls to emit them in full.
 examples:
   - name: Show one trigger history entry.
     text: az logicapp workflow trigger history show -g rg -n app --workflow wf --trigger manual --history-id hist1
+  - name: Show one entry including the pre-authorized content URIs.
+    text: az logicapp workflow trigger history show -g rg -n app --workflow wf --trigger manual --history-id hist1 --show-content-urls
 """
 
 helps['logicapp workflow trigger history show-inputs'] = """

@@ -1724,6 +1724,19 @@ subscription than the app service environment, please use the resource ID for --
                    help='Maximum number of items to return from the client-side page.')
         c.argument('next_token', options_list=['--next-token', '--continuation-token'], arg_group='Pagination',
                    help='Continuation token returned by a previous trigger history list call.')
+    for command_name in (
+        'logicapp workflow trigger history list',
+        'logicapp workflow trigger history show',
+    ):
+        with self.argument_context(command_name) as c:
+            c.argument('show_content_urls', options_list=['--show-content-urls'], action='store_true',
+                       help='Emit the pre-authorized inputsLink/outputsLink content URIs in full. '
+                            'These URIs embed a SAS credential that grants read access to the run '
+                            'content, so they are withheld by default and replaced with '
+                            '<redacted-by-az-logicapp-cli>. Pass this flag only when you need the '
+                            'raw URI, for example to fetch content with another tool; to read the '
+                            'content itself without handling a credential, use '
+                            '"az logicapp workflow trigger history show-inputs" or "show-outputs".')
     with self.argument_context('logicapp workflow trigger history resubmit') as c:
         c.argument('history_ids', options_list=['--history-ids'], nargs='+',
                    help='One or more trigger history entry ids to resubmit.')
