@@ -27,13 +27,9 @@ from ._runtime_client import (
     workflow_triggers_path,
 )
 
-TRIGGER_SCHEMA_VERSION = "logicapp.trigger/2026-08-29"
 TRIGGER_SCHEMA_DOCUMENT_VERSION = "logicapp.trigger-2026-08-29"
-TRIGGER_SCHEMA_SCHEMA_VERSION = "logicapp.triggerSchema/2026-08-29"
 TRIGGER_SCHEMA_SCHEMA_DOCUMENT_VERSION = "logicapp.triggerSchema-2026-08-29"
-TRIGGER_CALLBACK_URL_SCHEMA_VERSION = "logicapp.triggerCallbackUrl/2026-08-29"
 TRIGGER_CALLBACK_URL_SCHEMA_DOCUMENT_VERSION = "logicapp.triggerCallbackUrl-2026-08-29"
-TRIGGER_RUN_SCHEMA_VERSION = "logicapp.triggerRun/2026-08-29"
 TRIGGER_RUN_SCHEMA_DOCUMENT_VERSION = "logicapp.triggerRun-2026-08-29"
 _SITE_PROVIDER = "/providers/Microsoft.Web/sites/"
 _CM014_SCHEMA_404_CAUSE = (
@@ -133,7 +129,6 @@ def trigger_list(cmd, resource_group_name, name, workflow, max_items=None, next_
     client = client or _client(cmd, resource_group_name, name)
     payload = client.list(workflow_triggers_path(workflow), continuation_token=next_token, max_items=max_items)
     return {
-        "schemaVersion": TRIGGER_SCHEMA_VERSION,
         "value": [_trigger_response(item, workflow) for item in _value(payload)],
         "nextContinuationToken": payload.get("nextContinuationToken") if isinstance(payload, dict) else None,
         "synthesised": {
@@ -175,7 +170,6 @@ def trigger_show_schema(cmd, resource_group_name, name, workflow, trigger, clien
             )
         raise
     return {
-        "schemaVersion": TRIGGER_SCHEMA_SCHEMA_VERSION,
         "workflow": workflow,
         "trigger": trigger,
         "schema": schema,
@@ -186,7 +180,6 @@ def trigger_show_callback_url(cmd, resource_group_name, name, workflow, trigger,
     client = client or _client(cmd, resource_group_name, name)
     payload = client.post(trigger_callback_url_path(workflow, trigger), body={})
     return {
-        "schemaVersion": TRIGGER_CALLBACK_URL_SCHEMA_VERSION,
         "triggerName": trigger,
         "callbackUrl": _field(payload, "value") or _field(payload, "callbackUrl") or (payload if isinstance(payload, str) else None),
     }
@@ -201,7 +194,6 @@ def trigger_run(cmd, resource_group_name, name, workflow, trigger, payload_file=
     props = _properties(payload or {})
     run_id = _header(headers, "x-ms-workflow-run-id") or _field(payload, "name") or _field(props, "name") or _field(props, "runId")
     result = {
-        "schemaVersion": TRIGGER_RUN_SCHEMA_VERSION,
         "triggerName": trigger,
         "workflow": workflow,
         "runId": run_id,
@@ -277,7 +269,6 @@ def _field(source, name, default=None):
 def _trigger_response(raw, workflow, trigger=None):
     props = _properties(raw or {})
     return {
-        "schemaVersion": TRIGGER_SCHEMA_VERSION,
         "triggerName": trigger or _field(raw, "name") or _field(props, "name") or _field(props, "triggerName"),
         "workflow": workflow,
         "type": _field(props, "type") or _field(raw, "type"),

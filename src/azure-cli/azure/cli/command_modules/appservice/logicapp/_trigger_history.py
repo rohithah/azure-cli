@@ -27,13 +27,9 @@ from ._runtime_client import (
     workflow_trigger_path,
 )
 
-TRIGGER_HISTORY_SCHEMA_VERSION = "logicapp.trigger-history/2026-08-29"
 TRIGGER_HISTORY_SCHEMA_DOCUMENT_VERSION = "logicapp.trigger-history-2026-08-29"
-TRIGGER_HISTORY_ENTRY_SCHEMA_VERSION = "logicapp.trigger-history-entry/2026-08-29"
 TRIGGER_HISTORY_ENTRY_SCHEMA_DOCUMENT_VERSION = "logicapp.trigger-history-entry-2026-08-29"
-TRIGGER_HISTORY_CONTENT_SCHEMA_VERSION = "logicapp.trigger-history-content/2026-08-29"
 TRIGGER_HISTORY_CONTENT_SCHEMA_DOCUMENT_VERSION = "logicapp.trigger-history-content-2026-08-29"
-TRIGGER_HISTORY_RESUBMIT_SCHEMA_VERSION = "logicapp.trigger-history-resubmit/2026-08-29"
 TRIGGER_HISTORY_RESUBMIT_SCHEMA_DOCUMENT_VERSION = "logicapp.trigger-history-resubmit-2026-08-29"
 _SITE_PROVIDER = "/providers/Microsoft.Web/sites/"
 
@@ -123,7 +119,6 @@ def trigger_history_list(cmd, resource_group_name, name, workflow, trigger, max_
     if any(run_id_synthesised):
         fields.append("value[].runId")
     return {
-        "schemaVersion": TRIGGER_HISTORY_SCHEMA_VERSION,
         "value": items,
         "nextLink": payload.get("nextLink") if isinstance(payload, dict) else None,
         "nextContinuationToken": payload.get("nextContinuationToken") if isinstance(payload, dict) else None,
@@ -143,7 +138,7 @@ def trigger_history_list(cmd, resource_group_name, name, workflow, trigger, max_
 def trigger_history_show(cmd, resource_group_name, name, workflow, trigger, history_id, client=None):
     client = client or _client(cmd, resource_group_name, name)
     payload = client.get(trigger_history_path(workflow, trigger, history_id), params={"$expand": "run/properties"})
-    result = _history_response(payload, workflow, trigger, schema_version=TRIGGER_HISTORY_ENTRY_SCHEMA_VERSION)
+    result = _history_response(payload, workflow, trigger)
     run_id_synthesised = result.pop("_runIdSynthesised", False)
     if not result.get("historyId"):
         result["historyId"] = history_id
@@ -230,7 +225,6 @@ def _show_content(cmd, resource_group_name, name, workflow, trigger, history_id,
     total_size = _content_size(raw_content.get("headers"), link, len(content_bytes))
     preview, truncated = _preview(content_bytes, total_size)
     return {
-        "schemaVersion": TRIGGER_HISTORY_CONTENT_SCHEMA_VERSION,
         "workflow": workflow,
         "trigger": trigger,
         "historyId": history_id,
@@ -297,7 +291,6 @@ def _is_failure_outcome(outcome):
 
 def _resubmit_result(outcomes):
     return {
-        "schemaVersion": TRIGGER_HISTORY_RESUBMIT_SCHEMA_VERSION,
         "value": outcomes,
         "synthesised": {
             "fields": ["value[]", "value[].historyId", "value[].status when no platform status is returned", "value[].message"],
@@ -412,14 +405,13 @@ def _run_reference_state(props, run, run_id):
     return "not-returned-inline"
 
 
-def _history_response(raw, workflow, trigger, schema_version=TRIGGER_HISTORY_SCHEMA_VERSION):
+def _history_response(raw, workflow, trigger):
     props = _properties(raw or {})
     run = _field(props, "run")
     direct_run_id = _field(props, "runId")
     referenced_run_id = _run_id(run)
     run_id = referenced_run_id or direct_run_id
     return {
-        "schemaVersion": schema_version,
         "historyId": (raw or {}).get("name") or _field(props, "name") or _field(props, "historyId"),
         "workflow": workflow,
         "trigger": trigger,

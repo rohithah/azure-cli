@@ -37,8 +37,6 @@ from knack.help_files import helps
 
 from azure.cli.command_modules.appservice.logicapp import _run_unit_test
 from azure.cli.command_modules.appservice.logicapp._run_unit_test import (
-    GENERATED_UNIT_TEST_SCHEMA_VERSION,
-    MOCKABLE_OPERATION_LIST_SCHEMA_VERSION,
     mock_list,
     unit_test_create,
 )
@@ -107,7 +105,6 @@ def test_mock_list_uses_global_static_route_and_says_not_run_specific():
     result = mock_list(_Cmd(), "rg", "site", client=client)
 
     assert client.calls == [("list", "listMockableOperations", None, None, None)]
-    assert result["schemaVersion"] == MOCKABLE_OPERATION_LIST_SCHEMA_VERSION
     assert result["value"] == ["Compose", "Http"]
     assert result["httpOnly"] is False
     assert result["referenceScope"] == "global-operation-type-catalog"
@@ -181,7 +178,6 @@ def test_unit_test_create_sends_only_unit_test_name_warns_and_writes_redacted_zi
         # carries the marker, always, so bypass is behaviourally detectable.
         assert written["x-logicapp-cli-redaction"]["redactionApplied"] is False
         assert written["x-logicapp-cli-redaction"]["redactedQueryParameters"] == []
-        assert result["schemaVersion"] == GENERATED_UNIT_TEST_SCHEMA_VERSION
         assert result["artifact"] == "generated unit-test zip written to local file"
         assert result["artifactPath"].endswith("unit-test.zip")
         assert result["contentType"] == "application/zip"

@@ -29,9 +29,7 @@ from knack.log import get_logger
 
 from ._runtime_client import SiteRuntimeClient, generate_unit_test_path, mockable_operations_path
 
-MOCKABLE_OPERATION_LIST_SCHEMA_VERSION = "logicapp.mockable-operation-list/2026-08-29"
 MOCKABLE_OPERATION_LIST_SCHEMA_DOCUMENT_VERSION = "logicapp.mockable-operation-list-2026-08-29"
-GENERATED_UNIT_TEST_SCHEMA_VERSION = "logicapp.generated-unit-test/2026-08-29"
 GENERATED_UNIT_TEST_SCHEMA_DOCUMENT_VERSION = "logicapp.generated-unit-test-2026-08-29"
 _GLOBAL_CATALOG_DESCRIPTION = (
     "Global catalog of mockable operation types, not a run-scoped list. "
@@ -201,7 +199,6 @@ def _mockable_operations_response(payload, http_only):
         raise ValueError("mockable-operation list response must be an array or an object with a value array")
     next_token = payload.get("nextContinuationToken") if isinstance(payload, dict) else None
     return {
-        "schemaVersion": MOCKABLE_OPERATION_LIST_SCHEMA_VERSION,
         "value": values,
         "nextContinuationToken": next_token,
         "httpOnly": bool(http_only),
@@ -213,7 +210,6 @@ def _mockable_operations_response(payload, http_only):
         "meaning": _GLOBAL_CATALOG_DESCRIPTION,
         "synthesised": {
             "fields": [
-                "schemaVersion",
                 "httpOnly",
                 "referenceScope",
                 "itemKind",
@@ -225,7 +221,7 @@ def _mockable_operations_response(payload, http_only):
             ],
             "clientSidePaging": True,
             "reason": (
-                "The platform returns only the value array from a global route; the CLI adds schema, "
+                "The platform returns only the value array from a global route; the CLI adds "
                 "scope, and response-kind labels so the catalog cannot be mistaken for run-scoped "
                 "operation names or schemas. The global catalog route returns one collection; --max-items "
                 "and --next-token are applied by the CLI after reading that collection."
@@ -376,7 +372,6 @@ def _write_zip_artifact(output_file, zip_bytes):
         raise FileOperationError("Cannot write generated unit-test artifact to '{}': {}. Alternative: retry with a writable local file path.".format(output_file, ex)) from ex
 
     return {
-        "schemaVersion": GENERATED_UNIT_TEST_SCHEMA_VERSION,
         "artifact": "generated unit-test zip written to local file",
         "artifactPath": str(absolute_target),
         "contentType": "application/zip",

@@ -33,10 +33,6 @@ from knack.help_files import helps as knack_helps
 
 from azure.cli.command_modules.appservice.logicapp._exceptions import DesignRefusalError
 from azure.cli.command_modules.appservice.logicapp._trigger import (
-    TRIGGER_CALLBACK_URL_SCHEMA_VERSION,
-    TRIGGER_RUN_SCHEMA_VERSION,
-    TRIGGER_SCHEMA_SCHEMA_VERSION,
-    TRIGGER_SCHEMA_VERSION,
     trigger_list,
     trigger_run,
     trigger_show,
@@ -102,11 +98,9 @@ def test_trigger_list_and_show_call_site_runtime_routes_and_map_shape():
         ("list", "workflows/wf/triggers", None, None, None),
         ("get", "workflows/wf/triggers/recurrence", None),
     ]
-    assert listed["schemaVersion"] == TRIGGER_SCHEMA_VERSION
     assert listed["nextContinuationToken"] is None
     assert listed["synthesised"]["clientSidePaging"] is True
     assert listed["value"] == [{
-        "schemaVersion": TRIGGER_SCHEMA_VERSION,
         "triggerName": "manual",
         "workflow": "wf",
         "type": "Request",
@@ -118,7 +112,6 @@ def test_trigger_list_and_show_call_site_runtime_routes_and_map_shape():
         "splitOn": None,
         "metadata": None,
     }]
-    assert shown["schemaVersion"] == TRIGGER_SCHEMA_VERSION
     assert shown["triggerName"] == "recurrence"
     assert shown["recurrence"] == {"frequency": "Minute", "interval": 1}
 
@@ -160,7 +153,6 @@ def test_trigger_show_schema_maps_request_trigger_schema():
 
     assert client.calls == [("get", "workflows/wf/triggers/manual/schemas/json", None)]
     assert result == {
-        "schemaVersion": TRIGGER_SCHEMA_SCHEMA_VERSION,
         "workflow": "wf",
         "trigger": "manual",
         "schema": {"type": "object", "properties": {"id": {"type": "string"}}},
@@ -213,7 +205,6 @@ def test_trigger_show_callback_url_maps_platform_value_to_unredacted_callback_ur
 
     assert client.calls == [("post", "workflows/wf/triggers/manual/listCallbackUrl", {}, None)]
     assert result == {
-        "schemaVersion": TRIGGER_CALLBACK_URL_SCHEMA_VERSION,
         "triggerName": "manual",
         "callbackUrl": url,
     }
@@ -227,7 +218,6 @@ def test_trigger_run_uses_header_run_id_when_returned_by_platform():
 
     assert client.calls == [("post", "workflows/wf/triggers/manual/run", None, None)]
     assert result == {
-        "schemaVersion": TRIGGER_RUN_SCHEMA_VERSION,
         "triggerName": "manual",
         "workflow": "wf",
         "runId": "run2",
@@ -246,7 +236,6 @@ def test_trigger_run_accepted_without_run_id_is_honest_unknown_not_fabricated():
 
     result = trigger_run(_Cmd(), "rg", "site", "wf", "recurrence", client=client)
 
-    assert result["schemaVersion"] == TRIGGER_RUN_SCHEMA_VERSION
     assert result["runId"] is None
     assert result["status"] == "AcceptedNewRunIdUnknown"
     assert "will not infer or fabricate" in result["message"]

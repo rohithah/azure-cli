@@ -27,10 +27,6 @@ from azure.cli.core.mock import DummyCli
 
 from azure.cli.command_modules.appservice.logicapp._exceptions import DesignRefusalError
 from azure.cli.command_modules.appservice.logicapp._trigger_history import (
-    TRIGGER_HISTORY_CONTENT_SCHEMA_VERSION,
-    TRIGGER_HISTORY_ENTRY_SCHEMA_VERSION,
-    TRIGGER_HISTORY_RESUBMIT_SCHEMA_VERSION,
-    TRIGGER_HISTORY_SCHEMA_VERSION,
     trigger_history_list,
     trigger_history_resubmit,
     trigger_history_show,
@@ -107,7 +103,6 @@ def test_trigger_history_list_calls_site_runtime_histories_route_and_maps_contra
     result = trigger_history_list(_Cmd(), "rg", "site", "wf", "manual", client=client)
 
     assert client.calls == [("list", "workflows/wf/triggers/manual/histories", {"$expand": "run/properties"}, None, None)]
-    assert result["schemaVersion"] == TRIGGER_HISTORY_SCHEMA_VERSION
     assert result["nextLink"] == "https://example.invalid/next"
     assert result["nextContinuationToken"] is None
     assert result["synthesised"]["fields"] == [
@@ -116,7 +111,6 @@ def test_trigger_history_list_calls_site_runtime_histories_route_and_maps_contra
     assert result["synthesised"]["clientSidePaging"] is True
     assert "applied by the CLI" in result["synthesised"]["reason"]
     assert result["value"] == [{
-        "schemaVersion": TRIGGER_HISTORY_SCHEMA_VERSION,
         "historyId": "hist1",
         "workflow": "wf",
         "trigger": "manual",
@@ -248,7 +242,6 @@ def test_trigger_history_show_calls_single_entry_route_and_uses_entry_schema():
     result = trigger_history_show(_Cmd(), "rg", "site", "wf", "manual", "hist1", client=client)
 
     assert client.calls == [("get", "workflows/wf/triggers/manual/histories/hist1", {"$expand": "run/properties"})]
-    assert result["schemaVersion"] == TRIGGER_HISTORY_ENTRY_SCHEMA_VERSION
     assert result["historyId"] == "hist1"
     assert result["runId"] == "run1"
     assert result["synthesised"]["fields"] == ["workflow", "trigger", "historyId", "runId"]
@@ -273,7 +266,6 @@ def test_trigger_history_show_inputs_follows_platform_link_uri_exactly():
     assert client.calls[0] == ("get", "workflows/wf/triggers/manual/histories/hist1", {"$expand": "run/properties"})
     assert client.calls[1] == ("raw", uri, None)
     assert result == {
-        "schemaVersion": TRIGGER_HISTORY_CONTENT_SCHEMA_VERSION,
         "workflow": "wf",
         "trigger": "manual",
         "historyId": "hist1",
@@ -362,7 +354,6 @@ def test_trigger_history_resubmit_loops_and_returns_aggregated_success():
         ("post", "workflows/wf/triggers/manual/histories/hist1/resubmit", None, None),
         ("post", "workflows/wf/triggers/manual/histories/hist2/resubmit", None, None),
     ]
-    assert result["schemaVersion"] == TRIGGER_HISTORY_RESUBMIT_SCHEMA_VERSION
     assert result["value"] == [
         {"historyId": "hist1", "runId": "run2", "status": "ResubmitAccepted", "message": None},
         {"historyId": "hist2", "runId": "run3", "status": "Accepted", "message": None},
