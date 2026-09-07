@@ -128,13 +128,15 @@ def trigger_history_list(cmd, resource_group_name, name, workflow, trigger, max_
             "fields": fields + ["nextContinuationToken"],
             "clientSidePaging": True,
             "reason": (
-                "workflow and trigger are CLI inputs; historyId is projected from the platform "
-                "resource name. runId is listed only when projected from an inline platform run "
-                "reference. workflowVersion is copied verbatim from the platform's nested "
-                "run.properties.workflow object, never computed or inferred, and is null when the "
-                "platform does not return that object. The site-runtime trigger histories route "
-                "returns one collection; --max-items and --next-token are applied by the CLI after "
-                "reading that collection."
+                "workflow and trigger are CLI inputs echoed back. historyId is copied "
+                "verbatim from the platform resource name. runId is declared only when it "
+                "is CLI-computed as the trailing segment of an inline platform run "
+                "reference; when the platform supplies a run id directly it is copied "
+                "verbatim and not declared here. workflowVersion is copied verbatim from "
+                "the platform's nested run.properties.workflow object, never computed or "
+                "inferred, and is null when the platform does not return that object. The "
+                "site-runtime trigger histories route returns one collection; --max-items "
+                "and --next-token are applied by the CLI after reading that collection."
             ),
         },
     }
@@ -159,8 +161,11 @@ def trigger_history_show(cmd, resource_group_name, name, workflow, trigger, hist
     result["synthesised"] = {
         "fields": fields,
         "reason": (
-            "workflow and trigger are CLI inputs; historyId is projected from the platform resource "
-            "name or CLI input. runId is listed only when projected from an inline platform run reference. "
+            "workflow and trigger are CLI inputs echoed back. historyId is copied verbatim from "
+            "the platform resource name, or echoed from the --history-id argument when the "
+            "platform omits it. runId is declared only when it is CLI-computed as the trailing "
+            "segment of an inline platform run reference; when the platform supplies a run id "
+            "directly it is copied verbatim and not declared here. "
             "workflowVersion is copied verbatim from the platform's nested run.properties.workflow object, "
             "never computed or inferred, and is null when the platform does not return that object. The "
             "singular history route can omit it even though the CLI requests $expand=run/properties; when "

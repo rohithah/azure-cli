@@ -126,6 +126,45 @@ def test_version_list_discloses_client_side_paging():
     assert "server-side" in result["synthesised"]["reason"]
 
 
+def test_version_list_reason_accounts_for_every_field_it_declares():
+    # The defect this guards: the reason string explained only paging, while
+    # `fields` declared three CLI-added values. A caller reading the disclosure
+    # could not tell which were copied from the platform and which the CLI
+    # derived -- the same copy-vs-computed ambiguity fixed on trigger history.
+    #
+    # Naming a field is not enough and a bare substring check on the whole
+    # reason is not enough either: with several fields disclosed, dropping one
+    # field's classification leaves the others' wording intact, so a whole-string
+    # assertion still passes. Each field is checked in its OWN sentence.
+    client = _Client([{"value": [_version_entry("08584129710997436905")]}])
+    result = version_list(_Cmd(), "rg", "app", "specDemo", client=client)
+
+    synthesised = result["synthesised"]
+    reason = synthesised["reason"]
+    sentences = [s for s in reason.split(". ") if s.strip()]
+    derivations = ("copied verbatim", "CLI-computed", "echoed back")
+
+    for field in synthesised["fields"]:
+        owning = [s for s in sentences if field in s]
+        assert owning, "declared field %r is not explained in the reason" % field
+        assert any(d in s for s in owning for d in derivations), (
+            "field %r is named but never classified as copied, computed or echoed; "
+            "the reader cannot tell where the value came from" % field
+        )
+
+
+def test_version_list_reason_explains_the_composite_name_normalisation():
+    # `version` is verbatim when the platform supplies properties.version and
+    # computed from the composite name otherwise. Both branches ship, so both
+    # must be disclosed; a reader who only learns about the verbatim branch
+    # cannot explain a value that came from the fallback.
+    client = _Client([{"value": [_version_entry("08584129710997436905")]}])
+    reason = version_list(_Cmd(), "rg", "app", "specDemo", client=client)["synthesised"]["reason"]
+
+    assert "trailing segment" in reason
+    assert "version show --version" in reason
+
+
 def test_version_show_reads_the_single_version_route_and_returns_the_definition():
     client = _Client([_version_entry("08584129710997436905")])
     result = version_show(_Cmd(), "rg", "app", "specDemo", "08584129710997436905", client=client)
@@ -341,3 +380,41 @@ def test_version_reported_by_history_is_accepted_by_version_show():
     assert version_client.calls[0][1] == "workflows/specDemo/versions/{}".format(discovered)
     assert shown["version"] == discovered
     assert shown["definition"] is not None
+
+
+def test_no_shipped_disclosure_uses_the_ambiguous_word_projected():
+    """The word "projected" hides the distinction the disclosure exists to make.
+
+    Review found three `synthesised.reason` strings using "projected" for both
+    values copied verbatim from the platform AND values the CLI derived. A
+    caller cannot act on that: a verbatim copy can be trusted as platform truth,
+    a computed value cannot. This guard is deliberately vocabulary-level and
+    cross-command, because the defect recurred once per command as each was
+    written -- fixing the instances without banning the word leaves the next
+    author free to reintroduce it.
+    """
+    version_reason = version_list(
+        _Cmd(), "rg", "app", "specDemo",
+        client=_Client([{"value": [_version_entry("08584129710997436905")]}]),
+    )["synthesised"]["reason"]
+
+    listed = trigger_history_list(
+        _Cmd(), "rg", "app", "specDemo", "manual",
+        client=_Client([{"value": [_history_entry({"name": "08584129710997436905"})]}]),
+    )["synthesised"]["reason"]
+
+    shown = trigger_history_show(
+        _Cmd(), "rg", "app", "specDemo", "manual", "08584129710997436905",
+        client=_Client([_history_entry({"name": "08584129710997436905"})]),
+    )["synthesised"]["reason"]
+
+    for label, reason in (("version list", version_reason),
+                          ("trigger history list", listed),
+                          ("trigger history show", shown)):
+        assert "projected" not in reason, (
+            "%s discloses a field as 'projected', which does not tell the caller "
+            "whether the value was copied from the platform or computed by the CLI" % label
+        )
+        # And the replacement vocabulary must actually be present, so the word
+        # cannot simply be deleted to satisfy the ban above.
+        assert "copied verbatim" in reason, "%s no longer states what is verbatim" % label

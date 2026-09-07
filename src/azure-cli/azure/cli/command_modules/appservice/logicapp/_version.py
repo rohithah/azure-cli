@@ -75,6 +75,14 @@ def version_list(cmd, resource_group_name, name, workflow, max_items=None, next_
             "fields": ["value[].workflow", "value[].version", "nextContinuationToken"],
             "clientSidePaging": True,
             "reason": (
+                "value[].workflow is the --workflow argument echoed back, not a platform "
+                "field. value[].version is copied verbatim from the entry's "
+                "properties.version when the platform supplies it; when it does not, it is "
+                "CLI-computed as the trailing segment of the entry's composite name or "
+                "resource id, because the versions route names an entry "
+                "'{workflow}/{sequenceId}' while run payloads reference the bare sequence "
+                "id -- both shapes are normalised to the value 'version show --version' "
+                "accepts. nextContinuationToken is copied verbatim from the response. "
                 "The site-runtime versions route returns one collection; --max-items and "
                 "--next-token are applied by the CLI after reading that collection. The "
                 "route does accept server-side top/continuationToken parameters, but this "
