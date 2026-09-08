@@ -41,6 +41,26 @@ from azure.cli.command_modules.appservice.logicapp._trigger import (
 )
 
 
+def _reload_logicapp_help():
+    """Re-register the logicapp help entries into knack's global ``helps`` dict.
+
+    ``helps`` is process-global and is reset whenever another test module loads
+    the full CLI (``azure.cli.testsdk`` does this). A bare
+    ``import ..._help`` cannot repair that: the module is already in
+    ``sys.modules``, so the import is a no-op and the registration side effect
+    never runs again. The help assertions then pass or fail purely on which
+    test file pytest happened to run first -- they passed under ``azdev test``
+    (xdist workers, separate processes) while failing under a single-process
+    ``pytest`` run of the same files.
+
+    Reloading forces the registration to re-run, making these tests
+    order-independent instead of accidentally-ordered.
+    """
+    import importlib
+    import azure.cli.command_modules.appservice.logicapp._help as _logicapp_help
+    importlib.reload(_logicapp_help)
+
+
 class _Cmd:
     cli_ctx = DummyCli()
 
@@ -258,7 +278,7 @@ def test_trigger_help_registered_in_knack_help_files_reaches_disclosure_strings(
     rendered output — this is the source-side check; the walk is the rendered
     check.
     """
-    import azure.cli.command_modules.appservice.logicapp._help  # noqa: F401  pylint: disable=unused-import
+    _reload_logicapp_help()
 
     assert "logicapp workflow trigger show-schema" in knack_helps
     assert "logicapp workflow trigger show-callback-url" in knack_helps
@@ -314,7 +334,7 @@ def test_no_fabrication_guarantee_is_reproduced_in_help_long_summary():
     from azure.cli.command_modules.appservice.logicapp._trigger import (
         _TRIGGER_RUN_UNKNOWN_MESSAGE,
     )
-    import azure.cli.command_modules.appservice.logicapp._help  # noqa: F401  pylint: disable=unused-import
+    _reload_logicapp_help()
 
     trigger_run_help = knack_helps["logicapp workflow trigger run"]
 

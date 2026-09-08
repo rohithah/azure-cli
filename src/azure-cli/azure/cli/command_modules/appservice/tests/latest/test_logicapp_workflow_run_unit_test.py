@@ -43,6 +43,19 @@ from azure.cli.command_modules.appservice.logicapp._run_unit_test import (
 from azure.cli.command_modules.appservice.tests.latest._guard_vacuity_scope import derived_scope
 
 
+def _reload_logicapp_help():
+    """Re-register the logicapp help entries into knack's global ``helps`` dict.
+
+    See the twin helper in ``test_logicapp_workflow_trigger.py``. ``helps`` is
+    process-global and is reset when another test module loads the full CLI, and
+    a bare ``import ..._help`` cannot repair that because the module is already
+    in ``sys.modules``. Reloading makes this assertion order-independent.
+    """
+    import importlib
+    import azure.cli.command_modules.appservice.logicapp._help as _logicapp_help
+    importlib.reload(_logicapp_help)
+
+
 class _Cmd:
     cli_ctx = DummyCli()
 
@@ -247,7 +260,7 @@ def test_unit_test_create_help_registers_disclosure_that_generated_artifact_is_m
     ("mock-definition zip artifact") is load-bearing; a "friendly" rewrite
     to "unit-test project" would be an honesty regression.
     """
-    import azure.cli.command_modules.appservice.logicapp._help  # noqa: F401
+    _reload_logicapp_help()
 
     assert "logicapp workflow unit-test create" in helps
     text = helps["logicapp workflow unit-test create"]
