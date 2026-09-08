@@ -20,8 +20,11 @@ future reader does not mistake them for oversights:
   ``unit-test create`` verifies is present before it will emit the zip.
 """
 
+import os
+import re
 import unittest
 
+from azure.cli.command_modules.appservice.logicapp import _run_unit_test as _run_unit_test_module
 from azure.cli.command_modules.appservice.logicapp._run_unit_test import (
     _mockable_operations_response,
     _redaction_metadata,
@@ -67,6 +70,66 @@ class LogicappWorkflowStdoutSchemaVersionTest(unittest.TestCase):
         # Written into generated mock files, not stdout, and load-bearing for the
         # marker check that gates zip emission.
         self.assertIn("schemaVersion", _redaction_metadata(["Authorization"], ["sig"]))
+
+
+# The scan deliberately accepts more separators than the codebase uses. A scanner
+# that can only see the shape it approves of cannot report a violation: it would
+# report a clean single-shape population that had silently absorbed an offender.
+_ANY_SHAPE = re.compile(r"logicapp\.[A-Za-z][A-Za-z-]*[-/:._]20\d\d-\d\d-\d\d")
+_ACCEPTED_SHAPE = re.compile(r"logicapp\.[A-Za-z][A-Za-z-]*-20\d\d-\d\d-\d\d\Z")
+
+
+def _scan_shipped_schema_identifiers():
+    package_dir = os.path.dirname(os.path.abspath(_run_unit_test_module.__file__))
+    found = {}
+    for entry in sorted(os.listdir(package_dir)):
+        if not entry.endswith(".py"):
+            continue
+        path = os.path.join(package_dir, entry)
+        with open(path, "r", encoding="utf-8") as handle:
+            for identifier in _ANY_SHAPE.findall(handle.read()):
+                found.setdefault(identifier, entry)
+    return found
+
+
+class LogicappWorkflowSchemaIdentifierShapeTest(unittest.TestCase):
+    """One shape, derived from the shipped package rather than a frozen list.
+
+    The prototype under ``tools/logicapps/cli-ext`` used the slash form for all
+    21 of its identifiers, so the slash never distinguished anything there. When
+    the surface was ported into core, the 11 identifiers that were declared as
+    named constants were normalised to the hyphen form, and one that was written
+    as an inline literal several hundred lines from that block was not. Both
+    entered core in the same commit. It was an oversight in a single pass, not a
+    shape reserved to mean anything, so it is normalised rather than described.
+
+    This asserts no total: a thirteenth hyphen identifier is healthy growth and
+    must not require an edit here. Only a new *shape* is a finding.
+    """
+
+    def test_every_shipped_schema_identifier_uses_the_hyphen_shape(self):
+        offenders = {
+            identifier: source
+            for identifier, source in _scan_shipped_schema_identifiers().items()
+            if not _ACCEPTED_SHAPE.match(identifier)
+        }
+        self.assertEqual(
+            {}, offenders,
+            "schema identifiers must use the hyphen shape; a second shape means a "
+            "reader cannot tell shape from meaning: {}".format(offenders))
+
+    def test_the_scan_can_see_a_shape_it_does_not_accept(self):
+        # Without this, the guard above passes trivially if the scan pattern is
+        # ever narrowed to the accepted shape.
+        sample = "logicapp.generated-unit-test-redaction/2026-08-30"
+        self.assertTrue(_ANY_SHAPE.match(sample))
+        self.assertFalse(_ACCEPTED_SHAPE.match(sample))
+
+    def test_the_scan_finds_the_shipped_population(self):
+        # Guards against the scan silently matching nothing, which would make
+        # the conformance assertion vacuous.
+        found = _scan_shipped_schema_identifiers()
+        self.assertGreater(len(found), 1)
 
 
 if __name__ == "__main__":

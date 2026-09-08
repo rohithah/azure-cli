@@ -32,6 +32,7 @@ from ._runtime_client import SiteRuntimeClient, generate_unit_test_path, mockabl
 
 MOCKABLE_OPERATION_LIST_SCHEMA_DOCUMENT_VERSION = "logicapp.mockable-operation-list-2026-08-29"
 GENERATED_UNIT_TEST_SCHEMA_DOCUMENT_VERSION = "logicapp.generated-unit-test-2026-08-29"
+GENERATED_UNIT_TEST_REDACTION_SCHEMA_DOCUMENT_VERSION = "logicapp.generated-unit-test-redaction-2026-08-30"
 _GLOBAL_CATALOG_DESCRIPTION = (
     "Global catalog of mockable operation types, not a run-scoped list. "
     "The platform route accepts no workflow or run parameter; values are operation type names, "
@@ -336,7 +337,7 @@ def _redaction_metadata(redacted_headers, redacted_query_parameters):
     unique_headers = sorted({str(key) for key in redacted_headers}, key=str.lower)
     unique_query_parameters = sorted({str(key) for key in redacted_query_parameters}, key=str.lower)
     return {
-        "schemaVersion": "logicapp.generated-unit-test-redaction/2026-08-30",
+        "schemaVersion": GENERATED_UNIT_TEST_REDACTION_SCHEMA_DOCUMENT_VERSION,
         "synthesisedBy": "az logicapp workflow unit-test create",
         "synthesised": True,
         "redactionApplied": bool(unique_headers or unique_query_parameters),
