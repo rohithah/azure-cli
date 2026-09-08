@@ -142,7 +142,11 @@ def test_version_list_reason_accounts_for_every_field_it_declares():
     synthesised = result["synthesised"]
     reason = synthesised["reason"]
     sentences = [s for s in reason.split(". ") if s.strip()]
-    derivations = ("copied verbatim", "CLI-computed", "echoed back")
+    # "minted by the CLI" was added when `nextContinuationToken` was found to be
+    # falsely attributed to the platform. It is a distinct classification from
+    # "CLI-computed": that describes a value derived from platform data, whereas
+    # the paging cursor has no platform counterpart at all.
+    derivations = ("copied verbatim", "CLI-computed", "echoed back", "minted by the CLI")
 
     for field in synthesised["fields"]:
         owning = [s for s in sentences if field in s]
@@ -418,3 +422,50 @@ def test_no_shipped_disclosure_uses_the_ambiguous_word_projected():
         # And the replacement vocabulary must actually be present, so the word
         # cannot simply be deleted to satisfy the ban above.
         assert "copied verbatim" in reason, "%s no longer states what is verbatim" % label
+
+
+def test_paging_cursor_is_cli_minted_and_is_never_attributed_to_the_platform():
+    """``nextContinuationToken`` is the CLI's own cursor, and must say so.
+
+    This guard exists because the previous disclosure fix introduced a worse
+    defect than the one it removed. Replacing the ambiguous word "projected"
+    produced the precise-sounding sentence "nextContinuationToken is copied
+    verbatim from the response" -- factually false. ``_slice_items`` mints the
+    token via ``_encode_continuation`` as ``base64({"offset": N})``; the value
+    read at ``_version.py`` comes from the client's own return dict, not the
+    wire. An agent reading that sentence would trust a CLI-internal cursor as a
+    platform value and could try to hand it to another client.
+
+    The earlier vocabulary guards could not catch it: a false attribution
+    passes a per-field classification check and a ban on the word "projected"
+    while still being wrong about which side computed the value. So this guard
+    asserts the *fact* -- the wire carries no token, therefore any token the
+    command returns was necessarily minted here -- and only then checks that
+    the prose agrees.
+    """
+    from azure.cli.command_modules.appservice.logicapp._runtime_client import _decode_continuation
+
+    entries = [_version_entry("0858412971099743690%d" % i) for i in range(3)]
+    # The wire payload carries no continuation token of any kind.
+    payload = {"value": entries}
+    assert "nextContinuationToken" not in payload
+
+    result = version_list(_Cmd(), "rg", "app", "specDemo", max_items=2, client=_Client([payload]))
+
+    token = result["nextContinuationToken"]
+    assert token, "expected a cursor when the collection is longer than --max-items"
+    # It decodes as the CLI's own offset cursor. A platform-supplied opaque
+    # token would not, so this is proof of origin rather than of wording.
+    assert _decode_continuation(token) == 2
+
+    reason = result["synthesised"]["reason"]
+    assert result["synthesised"]["clientSidePaging"] is True
+    assert "minted by the CLI" in reason, (
+        "version list must state that nextContinuationToken is CLI-minted"
+    )
+    for claim in ("nextContinuationToken is copied verbatim",
+                  "copied verbatim from the response"):
+        assert claim not in reason, (
+            "version list attributes its own paging cursor to the platform (%r); "
+            "a caller cannot distinguish a CLI-internal cursor from a platform value" % claim
+        )
