@@ -37,21 +37,34 @@ from azure.cli.command_modules.appservice.logicapp._trigger_history import (
     _history_response,
     _resubmit_result,
 )
+from azure.cli.command_modules.appservice.logicapp._version import _version_response
+
+
+# One invocation per shipped stdout-response builder. New builders are forced
+# into this table by ``test_every_shipped_stdout_response_builder_is_covered``
+# below, which discovers the shipped population from disk and fails if any of
+# them are missing from here. That coupling is the point: hardcoding the list
+# of tested builders let a new builder ship without ever being checked for a
+# stdout ``schemaVersion``, which is what this file exists to forbid.
+_STDOUT_BUILDER_INVOCATIONS = {
+    "_trigger_response": lambda: _trigger_response(
+        {"name": "manual", "properties": {"type": "Request"}}, "wf"),
+    "_history_response": lambda: _history_response(
+        {"name": "08585", "properties": {"fired": True}}, "wf", "manual"),
+    "_resubmit_result": lambda: _resubmit_result(
+        [{"historyId": "08585", "status": "Accepted"}]),
+    "_mockable_operations_response": lambda: _mockable_operations_response(
+        {"value": ["Http"]}, http_only=True),
+    "_version_response": lambda: _version_response(
+        {"name": "08585", "properties": {"state": "Enabled"}}, "wf"),
+}
 
 
 class LogicappWorkflowStdoutSchemaVersionTest(unittest.TestCase):
 
     def test_stdout_response_builders_emit_no_schema_version(self):
-        responses = {
-            "_trigger_response": _trigger_response(
-                {"name": "manual", "properties": {"type": "Request"}}, "wf"),
-            "_history_response": _history_response(
-                {"name": "08585", "properties": {"fired": True}}, "wf", "manual"),
-            "_resubmit_result": _resubmit_result([{"historyId": "08585", "status": "Accepted"}]),
-            "_mockable_operations_response": _mockable_operations_response(
-                {"value": ["Http"]}, http_only=True),
-        }
-        for builder, payload in responses.items():
+        for builder, invoke in _STDOUT_BUILDER_INVOCATIONS.items():
+            payload = invoke()
             self.assertNotIn(
                 "schemaVersion", payload,
                 "{} put a schema identifier back on stdout".format(builder))
@@ -77,6 +90,27 @@ class LogicappWorkflowStdoutSchemaVersionTest(unittest.TestCase):
 # report a clean single-shape population that had silently absorbed an offender.
 _ANY_SHAPE = re.compile(r"logicapp\.[A-Za-z][A-Za-z-]*[-/:._]20\d\d-\d\d-\d\d")
 _ACCEPTED_SHAPE = re.compile(r"logicapp\.[A-Za-z][A-Za-z-]*-20\d\d-\d\d-\d\d\Z")
+
+# Discovery pattern for stdout-response builders. Any module-level ``def`` whose
+# name ends in ``_response`` or ``_result`` is treated as one, mirroring the
+# actual naming convention the shipped package uses. The coverage guard below
+# rejects a shipped name that is not paired with an invocation in the table
+# above, so a new builder cannot ship without being run through the absence
+# check for a stdout ``schemaVersion``.
+_STDOUT_BUILDER_DEF = re.compile(r"^def (_[a-z][a-z_]*_(?:response|result))\(", re.MULTILINE)
+
+
+def _scan_shipped_stdout_response_builders():
+    package_dir = os.path.dirname(os.path.abspath(_run_unit_test_module.__file__))
+    found = {}
+    for entry in sorted(os.listdir(package_dir)):
+        if not entry.endswith(".py"):
+            continue
+        path = os.path.join(package_dir, entry)
+        with open(path, "r", encoding="utf-8") as handle:
+            for name in _STDOUT_BUILDER_DEF.findall(handle.read()):
+                found.setdefault(name, entry)
+    return found
 
 
 def _scan_shipped_schema_identifiers():
@@ -129,6 +163,45 @@ class LogicappWorkflowSchemaIdentifierShapeTest(unittest.TestCase):
         # Guards against the scan silently matching nothing, which would make
         # the conformance assertion vacuous.
         found = _scan_shipped_schema_identifiers()
+        self.assertGreater(len(found), 1)
+
+
+class LogicappWorkflowStdoutBuilderDiscoveryTest(unittest.TestCase):
+    """Bind the absence check to the shipped population rather than a frozen list.
+
+    The first version of this file hardcoded four builders and asserted the
+    absence of a stdout ``schemaVersion`` on each. That let a new builder ship
+    without ever being iterated, so the ruling ``no stdout schema identifier``
+    was enforced only on the population known at the time the test was written.
+    A new hyphen-form identifier like ``logicapp.run-summary-2026-08-29`` would
+    pass the sibling shape scan above -- because the shape is accepted -- while
+    the absence check never looked at it.
+
+    Discovery closes that: the invocation table becomes required rather than
+    exemplary, and a new builder cannot land without being wired through it.
+    """
+
+    def test_every_shipped_stdout_response_builder_is_covered_by_the_absence_check(self):
+        discovered = set(_scan_shipped_stdout_response_builders())
+        registered = set(_STDOUT_BUILDER_INVOCATIONS)
+        missing = discovered - registered
+        self.assertEqual(
+            set(), missing,
+            "new stdout response builder(s) shipped without an invocation in "
+            "_STDOUT_BUILDER_INVOCATIONS; add one so the absence check runs "
+            "against them: {}".format(sorted(missing)))
+
+    def test_the_scan_can_see_a_builder_it_does_not_accept(self):
+        # Without this, the guard above passes trivially if the discovery
+        # pattern is ever narrowed to only the names already registered.
+        sample = "def _run_summary_response(raw, workflow):\n"
+        self.assertIsNotNone(_STDOUT_BUILDER_DEF.match(sample))
+        self.assertNotIn("_run_summary_response", _STDOUT_BUILDER_INVOCATIONS)
+
+    def test_the_scan_finds_the_shipped_population(self):
+        # Guards against the scan silently matching nothing, which would make
+        # the coverage assertion vacuous.
+        found = _scan_shipped_stdout_response_builders()
         self.assertGreater(len(found), 1)
 
 
