@@ -214,6 +214,8 @@ def load_command_table(self, _):
 
     logicapp_trigger_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._trigger#{}')
     logicapp_trigger_history_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._trigger_history#{}')
+    logicapp_run_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._run#{}')
+    logicapp_run_action_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._run_action#{}')
     logicapp_run_unit_test_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._run_unit_test#{}')
     logicapp_version_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._version#{}')
 
@@ -715,6 +717,8 @@ def load_command_table(self, _):
         self,
         logicapp_trigger_custom,
         logicapp_trigger_history_custom,
+        logicapp_run_custom,
+        logicapp_run_action_custom,
         logicapp_run_unit_test_custom,
         logicapp_version_custom,
     )
@@ -723,6 +727,8 @@ def load_command_table(self, _):
 def _register_logicapp_workflow_commands(loader,
                                          logicapp_trigger_custom,
                                          logicapp_trigger_history_custom,
+                                         logicapp_run_custom,
+                                         logicapp_run_action_custom,
                                          logicapp_run_unit_test_custom,
                                          logicapp_version_custom):
     """Register the M2 workflow surface (triggers, trigger history, mock catalog, unit-test).
@@ -734,7 +740,7 @@ def _register_logicapp_workflow_commands(loader,
     a new ``command_group`` decorator kwarg.
     """
     from azure.cli.command_modules.appservice.logicapp._manifest import attach_manifest
-    from azure.cli.command_modules.appservice.logicapp import _trigger, _trigger_history, _run_unit_test, _version
+    from azure.cli.command_modules.appservice.logicapp import _trigger, _trigger_history, _run, _run_action, _run_unit_test, _version
 
     with loader.command_group('logicapp workflow version', custom_command_type=logicapp_version_custom) as g:
         g.custom_command('list', 'version_list', table_transformer=_version.version_list_table_format)
@@ -765,6 +771,20 @@ def _register_logicapp_workflow_commands(loader,
         attach_manifest(loader, 'logicapp workflow trigger history show-outputs', _trigger_history.TRIGGER_HISTORY_SHOW_OUTPUTS_MANIFEST)
         g.custom_command('resubmit', 'trigger_history_resubmit', table_transformer=_trigger_history.trigger_history_table_format)
         attach_manifest(loader, 'logicapp workflow trigger history resubmit', _trigger_history.TRIGGER_HISTORY_RESUBMIT_MANIFEST)
+
+    with loader.command_group('logicapp workflow run', custom_command_type=logicapp_run_custom) as g:
+        g.custom_command('list', 'run_list', table_transformer=_run.run_list_table_format)
+        attach_manifest(loader, 'logicapp workflow run list', _run.RUN_LIST_MANIFEST)
+        g.custom_show_command('show', 'run_show', table_transformer=_run.run_show_table_format)
+        attach_manifest(loader, 'logicapp workflow run show', _run.RUN_SHOW_MANIFEST)
+
+    with loader.command_group('logicapp workflow run action', custom_command_type=logicapp_run_action_custom) as g:
+        g.custom_command('list', 'run_action_list', table_transformer=_run_action.run_action_list_table_format)
+        attach_manifest(loader, 'logicapp workflow run action list', _run_action.RUN_ACTION_LIST_MANIFEST)
+        g.custom_show_command('show', 'run_action_show', table_transformer=_run_action.run_action_show_table_format)
+        attach_manifest(loader, 'logicapp workflow run action show', _run_action.RUN_ACTION_SHOW_MANIFEST)
+        g.custom_command('show-content', 'run_action_show_content', table_transformer=_run_action.run_action_show_content_table_format)
+        attach_manifest(loader, 'logicapp workflow run action show-content', _run_action.RUN_ACTION_SHOW_CONTENT_MANIFEST)
 
     with loader.command_group('logicapp workflow mock', custom_command_type=logicapp_run_unit_test_custom) as g:
         g.custom_command('list', 'mock_list', table_transformer=_run_unit_test.mockable_operations_table_format)

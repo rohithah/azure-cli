@@ -292,6 +292,108 @@ examples:
     text: az logicapp workflow trigger history resubmit -g rg -n app --workflow wf --trigger manual --history-ids hist1 hist2
 """
 
+helps['logicapp workflow run'] = """
+type: group
+short-summary: Inspect Logic App Standard workflow runs.
+"""
+
+helps['logicapp workflow run list'] = """
+type: command
+short-summary: List runs of one workflow.
+long-summary: |
+  Reads the site-runtime runs route for one workflow and returns the runs the runtime
+  emits, newest first as ordered by the platform. The response includes runId, status,
+  timestamps, correlation, and the trigger/response operation summaries; each entry also
+  carries workflowVersion -- the executed version identifier hoisted from
+  properties.workflow.name -- so a run can be taken straight to the definition that
+  produced it via "az logicapp workflow version show --version <workflowVersion>".
+  Paging is server-side: --max-items is sent as $top and --next-token is sent as
+  $skiptoken; nextContinuationToken is the $skiptoken value the platform placed in the
+  response envelope's nextLink URL and is passed through opaquely. --status and
+  --start-time are native platform filters; --end-time is applied by the CLI after
+  listing because no native EndTime filter is exposed. Content link URIs on the trigger
+  and response operation summaries embed a SAS credential and are withheld by default;
+  pass --show-content-urls to emit them in full.
+examples:
+  - name: List runs of a workflow.
+    text: az logicapp workflow run list -g rg -n app --workflow wf
+  - name: List the two most recent runs, then fetch the next page.
+    text: az logicapp workflow run list -g rg -n app --workflow wf --max-items 2
+  - name: List runs that started on or after a date.
+    text: az logicapp workflow run list -g rg -n app --workflow wf --start-time 2026-09-01T00:00:00Z
+  - name: List only failed runs.
+    text: az logicapp workflow run list -g rg -n app --workflow wf --status Failed
+"""
+
+helps['logicapp workflow run show'] = """
+type: command
+short-summary: Show one workflow run.
+long-summary: |
+  Reads the site-runtime run route for one workflow and run identifier and returns the
+  full run object, including status, timestamps, correlation, trigger and response
+  operation summaries, and outputs. workflowVersion is hoisted from
+  properties.workflow.name so the executed version identifier is addressable at the top
+  level. Content link URIs on properties.trigger and properties.response embed a SAS
+  credential and are withheld by default; pass --show-content-urls to emit them in full.
+  Action-level detail is not surfaced here -- use "az logicapp workflow run action list"
+  or "az logicapp workflow run action show".
+examples:
+  - name: Show one workflow run.
+    text: az logicapp workflow run show -g rg -n app --workflow wf --run-id 08584126679215176449502816579CU00
+  - name: Show one run including the pre-authorized content URIs.
+    text: az logicapp workflow run show -g rg -n app --workflow wf --run-id 08584126679215176449502816579CU00 --show-content-urls
+"""
+
+helps['logicapp workflow run action'] = """
+type: group
+short-summary: Inspect the actions of one Logic App Standard workflow run.
+"""
+
+helps['logicapp workflow run action list'] = """
+type: command
+short-summary: List the actions of one workflow run.
+long-summary: |
+  Reads the site-runtime run-actions route for one workflow and run identifier. The
+  response includes status, timestamps, correlation, and inputs/outputs links for each
+  action the run executed. Content link URIs embed a SAS credential and are withheld by
+  default; pass --show-content-urls to emit them in full. Supports --max-items and
+  --next-token as CLI client-side paging over the returned collection.
+examples:
+  - name: List actions of a workflow run.
+    text: az logicapp workflow run action list -g rg -n app --workflow wf --run-id 08584126679215176449502816579CU00
+"""
+
+helps['logicapp workflow run action show'] = """
+type: command
+short-summary: Show one action of one workflow run.
+long-summary: |
+  Reads the site-runtime run-action route for one workflow, run identifier, and action
+  name. Content link URIs embed a SAS credential and are withheld by default; pass
+  --show-content-urls to emit them in full. To read the content itself without handling
+  a credential, use "az logicapp workflow run action show-content --content inputs" or
+  "outputs".
+examples:
+  - name: Show one action of one workflow run.
+    text: az logicapp workflow run action show -g rg -n app --workflow wf --run-id 08584126679215176449502816579CU00 --action Compose_greeting
+"""
+
+helps['logicapp workflow run action show-content'] = """
+type: command
+short-summary: Show the raw inputs or outputs content for one action of one workflow run.
+long-summary: |
+  Follows the selected action's inputsLink.uri or outputsLink.uri exactly as returned by
+  the platform, without adding an Authorization header (the URI itself is SAS-bearing).
+  If the corresponding link URI is absent, the command refuses and points at
+  "az logicapp workflow run action show" to inspect the action. The first 256 bytes of
+  the content are returned as a preview together with contentSizeBytes and a truncated
+  flag.
+examples:
+  - name: Show the inputs content for one action.
+    text: az logicapp workflow run action show-content -g rg -n app --workflow wf --run-id 08584126679215176449502816579CU00 --action Compose_greeting --content inputs
+  - name: Show the outputs content for one action.
+    text: az logicapp workflow run action show-content -g rg -n app --workflow wf --run-id 08584126679215176449502816579CU00 --action Compose_greeting --content outputs
+"""
+
 helps['logicapp workflow version'] = """
 type: group
 short-summary: Inspect deployed versions of a Logic App Standard workflow.

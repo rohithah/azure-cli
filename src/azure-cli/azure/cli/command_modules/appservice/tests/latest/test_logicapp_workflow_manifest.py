@@ -139,6 +139,11 @@ def test_all_m2_commands_carry_valid_manifest_rows_and_expected_capability_ids()
         ("CM-020", "logicapp workflow unit-test create"),
         ("CM-021-list", "logicapp workflow version list"),
         ("CM-021-show", "logicapp workflow version show"),
+        ("CM-001", "logicapp workflow run list"),
+        ("CM-002", "logicapp workflow run show"),
+        ("CM-003", "logicapp workflow run action list"),
+        ("CM-003-show", "logicapp workflow run action show"),
+        ("CM-004", "logicapp workflow run action show-content"),
     }
     assert m2_pairs == expected, "shipped workflow manifest surface diverged from expected"
 

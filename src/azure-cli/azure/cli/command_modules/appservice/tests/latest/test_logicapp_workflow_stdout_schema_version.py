@@ -29,6 +29,13 @@ from azure.cli.command_modules.appservice.logicapp._run_unit_test import (
     _mockable_operations_response,
     _redaction_metadata,
 )
+from azure.cli.command_modules.appservice.logicapp._run import (
+    _run_show_response,
+    _run_summary_response,
+)
+from azure.cli.command_modules.appservice.logicapp._run_action import (
+    _action_response,
+)
 from azure.cli.command_modules.appservice.logicapp._trigger import (
     TRIGGER_LIST_MANIFEST,
     _trigger_response,
@@ -57,6 +64,12 @@ _STDOUT_BUILDER_INVOCATIONS = {
         {"value": ["Http"]}, http_only=True),
     "_version_response": lambda: _version_response(
         {"name": "08585", "properties": {"state": "Enabled"}}, "wf"),
+    "_run_summary_response": lambda: _run_summary_response(
+        {"name": "run1", "properties": {"status": "Succeeded"}}, "wf", False),
+    "_run_show_response": lambda: _run_show_response(
+        {"name": "run1", "properties": {"status": "Succeeded"}}, "wf", "run1", False),
+    "_action_response": lambda: _action_response(
+        {"name": "Compose_greeting", "properties": {"status": "Succeeded"}}, "wf", "run1", False),
 }
 
 
@@ -194,9 +207,9 @@ class LogicappWorkflowStdoutBuilderDiscoveryTest(unittest.TestCase):
     def test_the_scan_can_see_a_builder_it_does_not_accept(self):
         # Without this, the guard above passes trivially if the discovery
         # pattern is ever narrowed to only the names already registered.
-        sample = "def _run_summary_response(raw, workflow):\n"
+        sample = "def _hypothetical_new_shape_response(raw, workflow):\n"
         self.assertIsNotNone(_STDOUT_BUILDER_DEF.match(sample))
-        self.assertNotIn("_run_summary_response", _STDOUT_BUILDER_INVOCATIONS)
+        self.assertNotIn("_hypothetical_new_shape_response", _STDOUT_BUILDER_INVOCATIONS)
 
     def test_the_scan_finds_the_shipped_population(self):
         # Guards against the scan silently matching nothing, which would make

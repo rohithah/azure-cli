@@ -1739,6 +1739,78 @@ subscription than the app service environment, please use the resource ID for --
         c.argument('history_ids', options_list=['--history-ids'], nargs='+',
                    help='One or more trigger history entry ids to resubmit.')
 
+    # ------------------------------------------------------------------
+    # Workflow run leaves (list, show) and run action leaves (list, show,
+    # show-content). ``-n/--name`` and ``--slot/-s`` are inherited from
+    # ``argument_context('logicapp')`` above (L1248) and are not redeclared.
+    # ``--next-token`` primary alias mirrors trigger-history registration.
+    for command_name in (
+        'logicapp workflow run list',
+        'logicapp workflow run show',
+        'logicapp workflow run action list',
+        'logicapp workflow run action show',
+        'logicapp workflow run action show-content',
+    ):
+        with self.argument_context(command_name) as c:
+            c.argument('workflow', options_list=['--workflow'], help='Workflow name.')
+    for command_name in (
+        'logicapp workflow run show',
+        'logicapp workflow run action list',
+        'logicapp workflow run action show',
+        'logicapp workflow run action show-content',
+    ):
+        with self.argument_context(command_name) as c:
+            c.argument('run_id', options_list=['--run-id'], help='Workflow run identifier.')
+    with self.argument_context('logicapp workflow run list') as c:
+        c.argument('status', options_list=['--status'], arg_group='Filter',
+                   help='Run status. Sent to the service as a native $filter status eq clause.')
+        c.argument('start_time', options_list=['--start-time'], arg_group='Filter',
+                   help='Inclusive lower bound for run start time (ISO 8601). Sent to the service as a native $filter startTime ge clause.')
+        c.argument('end_time', options_list=['--end-time'], arg_group='Filter',
+                   help='Inclusive upper bound for run end time (ISO 8601). Applied by the CLI after listing because the runtime exposes no native EndTime filter on this route; disclosed under synthesised.clientSideFilters when applied.')
+        c.argument('max_items', options_list=['--max-items'], type=int, arg_group='Pagination',
+                   help='Maximum number of items to return; sent to the service as native $top and clamped by the runtime page-size ceiling.')
+        c.argument('next_token', options_list=['--next-token', '--continuation-token'], arg_group='Pagination',
+                   help='Server-side continuation token returned as nextContinuationToken by a previous run list call; sent to the service as native $skiptoken and treated as opaque bytes by the CLI.')
+    for command_name in (
+        'logicapp workflow run list',
+        'logicapp workflow run show',
+    ):
+        with self.argument_context(command_name) as c:
+            c.argument('show_content_urls', options_list=['--show-content-urls'], action='store_true',
+                       help='Emit the pre-authorized inputsLink/outputsLink content URIs in full. '
+                            'These URIs embed a SAS credential that grants read access to the run '
+                            'content, so they are withheld by default and replaced with '
+                            '<redacted-by-az-logicapp-cli>. Pass this flag only when you need the '
+                            'raw URI, for example to fetch content with another tool.')
+    for command_name in (
+        'logicapp workflow run action show',
+        'logicapp workflow run action show-content',
+    ):
+        with self.argument_context(command_name) as c:
+            c.argument('action', options_list=['--action'], help='Run action name.')
+    with self.argument_context('logicapp workflow run action list') as c:
+        c.argument('max_items', options_list=['--max-items'], type=int, arg_group='Pagination',
+                   help='Maximum number of items to return from the client-side page.')
+        c.argument('next_token', options_list=['--next-token', '--continuation-token'], arg_group='Pagination',
+                   help='Continuation token returned by a previous run action list call.')
+    for command_name in (
+        'logicapp workflow run action list',
+        'logicapp workflow run action show',
+    ):
+        with self.argument_context(command_name) as c:
+            c.argument('show_content_urls', options_list=['--show-content-urls'], action='store_true',
+                       help='Emit the pre-authorized inputsLink/outputsLink content URIs in full. '
+                            'These URIs embed a SAS credential that grants read access to the action '
+                            'content, so they are withheld by default and replaced with '
+                            '<redacted-by-az-logicapp-cli>. Pass this flag only when you need the '
+                            'raw URI, for example to fetch content with another tool; to read the '
+                            'content itself without handling a credential, use '
+                            '"az logicapp workflow run action show-content --content inputs" or "outputs".')
+    with self.argument_context('logicapp workflow run action show-content') as c:
+        c.argument('content', options_list=['--content'], choices=['inputs', 'outputs'],
+                   help='Which content stream on the action to fetch and preview: inputs or outputs.')
+
     for command_name in (
         'logicapp workflow version list',
         'logicapp workflow version show',
