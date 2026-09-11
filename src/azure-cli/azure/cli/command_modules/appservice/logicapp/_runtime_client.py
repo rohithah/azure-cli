@@ -21,8 +21,16 @@ def _quote_segment(value):
     return quote(str(value), safe="")
 
 
+def workflows_path():
+    return "workflows"
+
+
+def workflow_path(workflow):
+    return "{}/{}".format(workflows_path(), _quote_segment(workflow))
+
+
 def workflow_runs_path(workflow):
-    return "workflows/{}/runs".format(_quote_segment(workflow))
+    return "{}/runs".format(workflow_path(workflow))
 
 
 def workflow_triggers_path(workflow):

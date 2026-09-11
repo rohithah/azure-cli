@@ -148,6 +148,8 @@ def test_all_m2_commands_carry_valid_manifest_rows_and_expected_capability_ids()
         ("CM-022-show", "logicapp workflow connector show"),
         ("CM-023-list", "logicapp workflow connector operation list"),
         ("CM-023-show", "logicapp workflow connector operation show"),
+        ("CM-024-list", "logicapp workflow list"),
+        ("CM-024-show", "logicapp workflow show"),
     }
     assert m2_pairs == expected, "shipped workflow manifest surface diverged from expected"
 

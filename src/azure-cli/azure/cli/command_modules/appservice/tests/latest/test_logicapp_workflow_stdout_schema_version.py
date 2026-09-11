@@ -45,6 +45,10 @@ from azure.cli.command_modules.appservice.logicapp._trigger_history import (
     _resubmit_result,
 )
 from azure.cli.command_modules.appservice.logicapp._version import _version_response
+from azure.cli.command_modules.appservice.logicapp._workflow import (
+    _workflow_list_response,
+    _workflow_response,
+)
 
 
 # One invocation per shipped stdout-response builder. New builders are forced
@@ -70,6 +74,10 @@ _STDOUT_BUILDER_INVOCATIONS = {
         {"name": "run1", "properties": {"status": "Succeeded"}}, "wf", "run1", False),
     "_action_response": lambda: _action_response(
         {"name": "Compose_greeting", "properties": {"status": "Succeeded"}}, "wf", "run1", False),
+    "_workflow_response": lambda: _workflow_response(
+        {"name": "wf", "health": {"state": "Healthy"}}),
+    "_workflow_list_response": lambda: _workflow_list_response(
+        [{"name": "wf", "health": {"state": "Healthy"}}]),
 }
 
 

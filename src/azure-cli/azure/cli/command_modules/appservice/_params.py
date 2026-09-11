@@ -48,7 +48,7 @@ STORAGE_MOUNT_TYPES = ['AzureFiles', 'LocalStorage', 'FileShare']
 REGISTRY_ADAPTER_TYPES = ['Binary', 'String', 'Expand_String', 'Multi_String', 'DWord', 'QWord']
 
 
-# pylint: disable=too-many-statements, too-many-lines
+# pylint: disable=too-many-statements, too-many-lines, too-many-branches
 
 
 def load_arguments(self, _):
@@ -1811,7 +1811,6 @@ subscription than the app service environment, please use the resource ID for --
         c.argument('content', options_list=['--content'], choices=['inputs', 'outputs'],
                    help='Which content stream on the action to fetch and preview: inputs or outputs.')
 
-    # ------------------------------------------------------------------
     # Connector catalog leaves (connector list/show, connector operation
     # list/show). ``-n/--name`` and ``--slot/-s`` are inherited from
     # ``argument_context('logicapp')`` above (L1248) and are not redeclared;
@@ -1842,6 +1841,7 @@ subscription than the app service environment, please use the resource ID for --
                             'token is CLI-computed, not a server-side token.')
 
     for command_name in (
+        'logicapp workflow show',
         'logicapp workflow version list',
         'logicapp workflow version show',
     ):

@@ -20,7 +20,7 @@ This replacement pins the shipping surface behaviourally:
       a workflow handler would trip this check even if the command
       name stayed intact.
 
-  (3) WORKFLOW INVENTORY — the 12 new workflow commands are frozen so a
+  (3) WORKFLOW INVENTORY — the shipped workflow commands are frozen so a
       later PR that drops one (or accidentally adds a 13th) is caught.
 
   (4) NO baseline COMMANDS ROUTE INTO ``logicapp/`` — none of the pinned baseline
@@ -63,6 +63,8 @@ PINNED_CORE_LOGICAPP_COMMANDS = frozenset({
 
 
 PINNED_M2_WORKFLOW_COMMANDS = frozenset({
+    "logicapp workflow list",
+    "logicapp workflow show",
     "logicapp workflow trigger list",
     "logicapp workflow trigger show",
     "logicapp workflow trigger show-schema",

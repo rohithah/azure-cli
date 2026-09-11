@@ -18,8 +18,10 @@ from azure.cli.command_modules.appservice.logicapp._runtime_client import (
     trigger_history_resubmit_path,
     trigger_run_path,
     trigger_schema_path,
+    workflow_path,
     workflow_run_path,
     workflow_runs_path,
+    workflows_path,
     workflow_trigger_path,
     workflow_triggers_path,
 )
@@ -46,6 +48,12 @@ class _Response:
 
 class _HttpResponse:
     status_code = 404
+
+
+def test_workflow_collection_and_singleton_paths_quote_segments():
+    assert workflows_path() == "workflows"
+    assert workflow_path("wf/one") == "workflows/wf%2Fone"
+    assert workflow_runs_path("wf/one") == "workflows/wf%2Fone/runs"
 
 
 def test_runtime_client_builds_arm_hostruntime_management_url_and_uses_raw_sender():

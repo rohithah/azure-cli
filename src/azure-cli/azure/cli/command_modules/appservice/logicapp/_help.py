@@ -167,6 +167,24 @@ type: group
 short-summary: Inspect and operate on Logic App Standard workflows.
 """
 
+helps['logicapp workflow list'] = """
+type: command
+short-summary: List workflows deployed in a Logic App Standard site.
+long-summary: Reads the site-runtime workflows route, which returns a top-level array. The CLI wraps that array in value to match the shipped Logic Apps workflow list-command convention, but does not add connectors or nextContinuationToken.
+examples:
+  - name: List workflows in a Logic App Standard site.
+    text: az logicapp workflow list -g rg -n app
+"""
+
+helps['logicapp workflow show'] = """
+type: command
+short-summary: Show one workflow's platform metadata.
+long-summary: Reads the site-runtime workflows singleton route and returns the platform object verbatim. The platform reports state under health.state; the CLI does not add a root state field or a stdout schemaVersion.
+examples:
+  - name: Show one workflow.
+    text: az logicapp workflow show -g rg -n app --workflow wf
+"""
+
 helps['logicapp workflow trigger'] = """
 type: group
 short-summary: Inspect and invoke Logic App Standard workflow triggers.
