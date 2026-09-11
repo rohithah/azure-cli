@@ -212,6 +212,14 @@ def load_command_table(self, _):
 
     logicapp_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp.custom#{}')
 
+    logicapp_trigger_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._trigger#{}')
+    logicapp_trigger_history_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._trigger_history#{}')
+    logicapp_run_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._run#{}')
+    logicapp_run_action_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._run_action#{}')
+    logicapp_run_unit_test_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._run_unit_test#{}')
+    logicapp_version_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._version#{}')
+    logicapp_connector_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._connector#{}')
+
     webapp_exec_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.webapp_exec#{}')
 
     network_capture_custom = CliCommandType(
@@ -705,3 +713,98 @@ def load_command_table(self, _):
 
     with self.command_group('logicapp deployment source') as g:
         g.custom_command('config-zip', 'enable_zip_deploy_functionapp')
+
+    _register_logicapp_workflow_commands(
+        self,
+        logicapp_trigger_custom,
+        logicapp_trigger_history_custom,
+        logicapp_run_custom,
+        logicapp_run_action_custom,
+        logicapp_run_unit_test_custom,
+        logicapp_version_custom,
+        logicapp_connector_custom,
+    )
+
+
+def _register_logicapp_workflow_commands(loader,
+                                         logicapp_trigger_custom,
+                                         logicapp_trigger_history_custom,
+                                         logicapp_run_custom,
+                                         logicapp_run_action_custom,
+                                         logicapp_run_unit_test_custom,
+                                         logicapp_version_custom,
+                                         logicapp_connector_custom):
+    """Register the M2 workflow surface (triggers, trigger history, mock catalog, unit-test).
+
+    Registration is flattened here (per core convention: zero per-noun ``register_commands``
+    precedent exists anywhere in ``command_modules``). Each ``group.custom_command`` is
+    paired with a call to ``attach_manifest`` so capability rows travel with the command
+    object, mirroring the extension's ``custom_command_with_manifest`` seam without inventing
+    a new ``command_group`` decorator kwarg.
+    """
+    from azure.cli.command_modules.appservice.logicapp._manifest import attach_manifest
+    from azure.cli.command_modules.appservice.logicapp import _trigger, _trigger_history, _run, _run_action, _run_unit_test, _version, _connector
+
+    with loader.command_group('logicapp workflow version', custom_command_type=logicapp_version_custom) as g:
+        g.custom_command('list', 'version_list', table_transformer=_version.version_list_table_format)
+        attach_manifest(loader, 'logicapp workflow version list', _version.VERSION_LIST_MANIFEST)
+        g.custom_show_command('show', 'version_show', table_transformer=_version.version_show_table_format)
+        attach_manifest(loader, 'logicapp workflow version show', _version.VERSION_SHOW_MANIFEST)
+
+    with loader.command_group('logicapp workflow trigger', custom_command_type=logicapp_trigger_custom) as g:
+        g.custom_command('list', 'trigger_list', table_transformer=_trigger.trigger_list_table_format)
+        attach_manifest(loader, 'logicapp workflow trigger list', _trigger.TRIGGER_LIST_MANIFEST)
+        g.custom_show_command('show', 'trigger_show', table_transformer=_trigger.trigger_show_table_format)
+        attach_manifest(loader, 'logicapp workflow trigger show', _trigger.TRIGGER_SHOW_MANIFEST)
+        g.custom_command('show-schema', 'trigger_show_schema', table_transformer=_trigger.trigger_schema_table_format)
+        attach_manifest(loader, 'logicapp workflow trigger show-schema', _trigger.TRIGGER_SHOW_SCHEMA_MANIFEST)
+        g.custom_command('show-callback-url', 'trigger_show_callback_url', table_transformer=_trigger.trigger_callback_url_table_format)
+        attach_manifest(loader, 'logicapp workflow trigger show-callback-url', _trigger.TRIGGER_SHOW_CALLBACK_URL_MANIFEST)
+        g.custom_command('run', 'trigger_run', table_transformer=_trigger.trigger_run_table_format)
+        attach_manifest(loader, 'logicapp workflow trigger run', _trigger.TRIGGER_RUN_MANIFEST)
+
+    with loader.command_group('logicapp workflow trigger history', custom_command_type=logicapp_trigger_history_custom) as g:
+        g.custom_command('list', 'trigger_history_list', table_transformer=_trigger_history.trigger_history_table_format)
+        attach_manifest(loader, 'logicapp workflow trigger history list', _trigger_history.TRIGGER_HISTORY_LIST_MANIFEST)
+        g.custom_show_command('show', 'trigger_history_show', table_transformer=_trigger_history.trigger_history_entry_table_format)
+        attach_manifest(loader, 'logicapp workflow trigger history show', _trigger_history.TRIGGER_HISTORY_SHOW_MANIFEST)
+        g.custom_command('show-inputs', 'trigger_history_show_inputs', table_transformer=_trigger_history.trigger_history_entry_table_format)
+        attach_manifest(loader, 'logicapp workflow trigger history show-inputs', _trigger_history.TRIGGER_HISTORY_SHOW_INPUTS_MANIFEST)
+        g.custom_command('show-outputs', 'trigger_history_show_outputs', table_transformer=_trigger_history.trigger_history_entry_table_format)
+        attach_manifest(loader, 'logicapp workflow trigger history show-outputs', _trigger_history.TRIGGER_HISTORY_SHOW_OUTPUTS_MANIFEST)
+        g.custom_command('resubmit', 'trigger_history_resubmit', table_transformer=_trigger_history.trigger_history_table_format)
+        attach_manifest(loader, 'logicapp workflow trigger history resubmit', _trigger_history.TRIGGER_HISTORY_RESUBMIT_MANIFEST)
+
+    with loader.command_group('logicapp workflow run', custom_command_type=logicapp_run_custom) as g:
+        g.custom_command('list', 'run_list', table_transformer=_run.run_list_table_format)
+        attach_manifest(loader, 'logicapp workflow run list', _run.RUN_LIST_MANIFEST)
+        g.custom_show_command('show', 'run_show', table_transformer=_run.run_show_table_format)
+        attach_manifest(loader, 'logicapp workflow run show', _run.RUN_SHOW_MANIFEST)
+
+    with loader.command_group('logicapp workflow run action', custom_command_type=logicapp_run_action_custom) as g:
+        g.custom_command('list', 'run_action_list', table_transformer=_run_action.run_action_list_table_format)
+        attach_manifest(loader, 'logicapp workflow run action list', _run_action.RUN_ACTION_LIST_MANIFEST)
+        g.custom_show_command('show', 'run_action_show', table_transformer=_run_action.run_action_show_table_format)
+        attach_manifest(loader, 'logicapp workflow run action show', _run_action.RUN_ACTION_SHOW_MANIFEST)
+        g.custom_command('show-content', 'run_action_show_content', table_transformer=_run_action.run_action_show_content_table_format)
+        attach_manifest(loader, 'logicapp workflow run action show-content', _run_action.RUN_ACTION_SHOW_CONTENT_MANIFEST)
+
+    with loader.command_group('logicapp workflow connector', custom_command_type=logicapp_connector_custom) as g:
+        g.custom_command('list', 'connector_list', table_transformer=_connector.connector_list_table_format)
+        attach_manifest(loader, 'logicapp workflow connector list', _connector.CONNECTOR_LIST_MANIFEST)
+        g.custom_show_command('show', 'connector_show', table_transformer=_connector.connector_show_table_format)
+        attach_manifest(loader, 'logicapp workflow connector show', _connector.CONNECTOR_SHOW_MANIFEST)
+
+    with loader.command_group('logicapp workflow connector operation', custom_command_type=logicapp_connector_custom) as g:
+        g.custom_command('list', 'connector_operation_list', table_transformer=_connector.connector_operation_list_table_format)
+        attach_manifest(loader, 'logicapp workflow connector operation list', _connector.CONNECTOR_OPERATION_LIST_MANIFEST)
+        g.custom_show_command('show', 'connector_operation_show', table_transformer=_connector.connector_operation_show_table_format)
+        attach_manifest(loader, 'logicapp workflow connector operation show', _connector.CONNECTOR_OPERATION_SHOW_MANIFEST)
+
+    with loader.command_group('logicapp workflow mock', custom_command_type=logicapp_run_unit_test_custom) as g:
+        g.custom_command('list', 'mock_list', table_transformer=_run_unit_test.mockable_operations_table_format)
+        attach_manifest(loader, 'logicapp workflow mock list', _run_unit_test.MOCK_LIST_MANIFEST)
+
+    with loader.command_group('logicapp workflow unit-test', custom_command_type=logicapp_run_unit_test_custom) as g:
+        g.custom_command('create', 'unit_test_create')
+        attach_manifest(loader, 'logicapp workflow unit-test create', _run_unit_test.UNIT_TEST_CREATE_MANIFEST)

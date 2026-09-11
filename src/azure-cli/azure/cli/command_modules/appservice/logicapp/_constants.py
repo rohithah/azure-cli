@@ -9,6 +9,11 @@ WINDOWS_RUNTIMES = ['dotnet', 'node', 'java', 'powershell']
 DEFAULT_LOGICAPP_RUNTIME = 'node'
 DEFAULT_LOGICAPP_FUNCTION_VERSION = '4'
 
+# Placeholder substituted for a credential the CLI declines to print. Shared so the
+# generated unit-test mock redaction and the trigger-history content-link redaction
+# are recognisable as the same act by anyone reading either output.
+LOGICAPP_REDACTION_SENTINEL = "<redacted-by-az-logicapp-cli>"
+
 # functions version -> runtime : default runtime version
 FUNCTIONS_VERSION_TO_DEFAULT_RUNTIME_VERSION = {
     '2': {

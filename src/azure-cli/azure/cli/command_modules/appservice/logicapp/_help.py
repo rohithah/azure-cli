@@ -157,3 +157,398 @@ examples:
     text: az logicapp update --name myLogicApp --resource-group myRG
     crafted: true
 """
+
+# ---------------------------------------------------------------------------
+# logicapp workflow surface
+# ---------------------------------------------------------------------------
+
+helps['logicapp workflow'] = """
+type: group
+short-summary: Inspect and operate on Logic App Standard workflows.
+"""
+
+helps['logicapp workflow trigger'] = """
+type: group
+short-summary: Inspect and invoke Logic App Standard workflow triggers.
+"""
+
+helps['logicapp workflow trigger list'] = """
+type: command
+short-summary: List workflow triggers.
+long-summary: Supports --max-items and --next-token (or its --continuation-token alias) as CLI client-side paging over the site-runtime trigger collection; the service is still read as one collection.
+examples:
+  - name: List triggers for a workflow.
+    text: az logicapp workflow trigger list -g rg -n app --workflow wf
+"""
+
+helps['logicapp workflow trigger show'] = """
+type: command
+short-summary: Show one workflow trigger.
+examples:
+  - name: Show a trigger.
+    text: az logicapp workflow trigger show -g rg -n app --workflow wf --trigger manual
+"""
+
+helps['logicapp workflow trigger show-schema'] = """
+type: command
+short-summary: Show the JSON request schema for a request trigger.
+long-summary: Only request triggers expose a JSON request schema. Non-request triggers return 404 from the platform; the CLI refuses with the cause and points you to 'trigger show' instead of printing a stack trace.
+examples:
+  - name: Show the request schema for a request trigger.
+    text: az logicapp workflow trigger show-schema -g rg -n app --workflow wf --trigger manual
+"""
+
+helps['logicapp workflow trigger show-callback-url'] = """
+type: command
+short-summary: Show the callback URL for a trigger.
+long-summary: The callbackUrl field is a bearer credential and is emitted as a plain, unredacted field in json, tsv, and table output, matching the published command reference.
+examples:
+  - name: Show a trigger callback URL.
+    text: az logicapp workflow trigger show-callback-url -g rg -n app --workflow wf --trigger manual
+"""
+
+helps['logicapp workflow trigger run'] = """
+type: command
+short-summary: Run a workflow trigger.
+long-summary: |
+  Recurrence and notification triggers can return OK with no response body. When the platform
+  does not return x-ms-workflow-run-id or a body run id, the CLI returns runId: null and says
+  the new run id is unknown; the CLI will not infer or fabricate a run id, and it does not
+  infer one from latest-run polling. No deterministic follow-up run id is available from that
+  response. This command is fire-and-forget: the CLI returns as soon as the platform accepts
+  the trigger and does not poll for terminal state. No `wait` verb is shipped in this port;
+  request triggers do return an x-ms-workflow-run-id that a future `wait` could poll (see the
+  finding on file), but shipping that verb requires minting a new capability id and is left
+  to a follow-up decision. Optional
+  manual workaround: record the request time, list later workflow runs with --start-time, and
+  inspect candidate runs for trigger.name matching this trigger. This is approximate, and under
+  concurrent trigger firings it can attribute the wrong run; it is not a substitute for a
+  returned runId.
+examples:
+  - name: Run a trigger.
+    text: az logicapp workflow trigger run -g rg -n app --workflow wf --trigger recurrence
+  - name: Run a trigger with a JSON payload.
+    text: az logicapp workflow trigger run -g rg -n app --workflow wf --trigger manual --payload-file payload.json
+"""
+
+helps['logicapp workflow trigger history'] = """
+type: group
+short-summary: Inspect Logic App Standard workflow trigger history.
+"""
+
+helps['logicapp workflow trigger history list'] = """
+type: command
+short-summary: List a workflow trigger's history entries.
+long-summary: Reads the site-runtime trigger histories route for one workflow and trigger. The command returns the platform history entry fields the runtime provides, including status, timestamps, tracking/correlation data, run reference, and content links when present. Content link URIs embed a SAS credential and are withheld by default; pass --show-content-urls to emit them in full. Supports --max-items and --next-token as CLI client-side paging over the returned collection; the service is still read as one collection.
+examples:
+  - name: List trigger history entries.
+    text: az logicapp workflow trigger history list -g rg -n app --workflow wf --trigger manual
+  - name: List trigger history entries including the pre-authorized content URIs.
+    text: az logicapp workflow trigger history list -g rg -n app --workflow wf --trigger manual --show-content-urls
+"""
+
+helps['logicapp workflow trigger history show'] = """
+type: command
+short-summary: Show one workflow trigger history entry.
+long-summary: Reads the site-runtime trigger history route for one workflow, trigger, and history id. The command returns entry metadata only; use show-inputs or show-outputs to retrieve the raw inbound content. Content link URIs embed a SAS credential and are withheld by default; pass --show-content-urls to emit them in full.
+examples:
+  - name: Show one trigger history entry.
+    text: az logicapp workflow trigger history show -g rg -n app --workflow wf --trigger manual --history-id hist1
+  - name: Show one entry including the pre-authorized content URIs.
+    text: az logicapp workflow trigger history show -g rg -n app --workflow wf --trigger manual --history-id hist1 --show-content-urls
+"""
+
+helps['logicapp workflow trigger history show-inputs'] = """
+type: command
+short-summary: Show the raw inputs content for one workflow trigger history entry.
+long-summary: Follows the selected history entry's inputsLink.uri exactly as returned by the platform, without adding an Authorization header. If the inputsLink URI is absent, the command refuses and tells you to inspect the history entry.
+examples:
+  - name: Show the inputs content for one trigger history entry.
+    text: az logicapp workflow trigger history show-inputs -g rg -n app --workflow wf --trigger manual --history-id hist1
+"""
+
+helps['logicapp workflow trigger history show-outputs'] = """
+type: command
+short-summary: Show the raw outputs content for one workflow trigger history entry.
+long-summary: Follows the selected history entry's outputsLink.uri exactly as returned by the platform, without adding an Authorization header. If the outputsLink URI is absent, the command refuses and tells you to inspect the history entry.
+examples:
+  - name: Show the outputs content for one trigger history entry.
+    text: az logicapp workflow trigger history show-outputs -g rg -n app --workflow wf --trigger manual --history-id hist1
+"""
+
+helps['logicapp workflow trigger history resubmit'] = """
+type: command
+short-summary: Resubmit one or more workflow trigger history entries.
+long-summary: |
+  The platform route accepts one history id per request. The CLI accepts one or
+  more --history-ids values, loops client-side, and returns per-entry outcomes; any failed
+  entry makes the command fail overall. Multi-id server support remains unresolved until a
+  live observation proves otherwise. This command is fire-and-forget: each per-history-id POST
+  returns as soon as the platform accepts the resubmit, and the CLI does not poll for terminal
+  state. No `wait` verb is shipped in this port; adding one requires minting a new capability
+  id and is left to a follow-up decision.
+examples:
+  - name: Resubmit two trigger history entries.
+    text: az logicapp workflow trigger history resubmit -g rg -n app --workflow wf --trigger manual --history-ids hist1 hist2
+"""
+
+helps['logicapp workflow run'] = """
+type: group
+short-summary: Inspect Logic App Standard workflow runs.
+"""
+
+helps['logicapp workflow run list'] = """
+type: command
+short-summary: List runs of one workflow.
+long-summary: |
+  Reads the site-runtime runs route for one workflow and returns the runs the runtime
+  emits, newest first as ordered by the platform. The response includes runId, status,
+  timestamps, correlation, and the trigger/response operation summaries; each entry also
+  carries workflowVersion -- the executed version identifier hoisted from
+  properties.workflow.name -- so a run can be taken straight to the definition that
+  produced it via "az logicapp workflow version show --version <workflowVersion>".
+  Paging is server-side: --max-items is sent as $top and --next-token is sent as
+  $skiptoken; nextContinuationToken is the $skiptoken value the platform placed in the
+  response envelope's nextLink URL and is passed through opaquely. --status and
+  --start-time are native platform filters; --end-time is applied by the CLI after
+  listing because no native EndTime filter is exposed. Content link URIs on the trigger
+  and response operation summaries embed a SAS credential and are withheld by default;
+  pass --show-content-urls to emit them in full.
+examples:
+  - name: List runs of a workflow.
+    text: az logicapp workflow run list -g rg -n app --workflow wf
+  - name: List the two most recent runs, then fetch the next page.
+    text: az logicapp workflow run list -g rg -n app --workflow wf --max-items 2
+  - name: List runs that started on or after a date.
+    text: az logicapp workflow run list -g rg -n app --workflow wf --start-time 2026-09-01T00:00:00Z
+  - name: List only failed runs.
+    text: az logicapp workflow run list -g rg -n app --workflow wf --status Failed
+"""
+
+helps['logicapp workflow run show'] = """
+type: command
+short-summary: Show one workflow run.
+long-summary: |
+  Reads the site-runtime run route for one workflow and run identifier and returns the
+  full run object, including status, timestamps, correlation, trigger and response
+  operation summaries, and outputs. workflowVersion is hoisted from
+  properties.workflow.name so the executed version identifier is addressable at the top
+  level. Content link URIs on properties.trigger and properties.response embed a SAS
+  credential and are withheld by default; pass --show-content-urls to emit them in full.
+  Action-level detail is not surfaced here -- use "az logicapp workflow run action list"
+  or "az logicapp workflow run action show".
+examples:
+  - name: Show one workflow run.
+    text: az logicapp workflow run show -g rg -n app --workflow wf --run-id 08584126679215176449502816579CU00
+  - name: Show one run including the pre-authorized content URIs.
+    text: az logicapp workflow run show -g rg -n app --workflow wf --run-id 08584126679215176449502816579CU00 --show-content-urls
+"""
+
+helps['logicapp workflow connector'] = """
+type: group
+short-summary: Inspect the connector catalog available to a Logic App Standard site.
+"""
+
+helps['logicapp workflow connector list'] = """
+type: command
+short-summary: List the connectors available to a Logic App Standard site.
+long-summary: |
+  Reads the site-runtime operationGroups route and returns each connector verbatim.
+  The catalog mixes two classes, distinguishable by the id prefix: "connectionProviders/"
+  (built-in operations) and "serviceProviders/" (service-provider connectors). The type
+  field is emitted only for serviceProviders entries and is absent for connectionProviders
+  entries; the CLI does not backfill it. This route returns one collection with no
+  server-side paging and silently ignores $top, so --max-items and --next-token are
+  applied by the CLI after reading the whole collection and are disclosed under
+  synthesised.clientSidePaging.
+examples:
+  - name: List all connectors available to a Logic App Standard site.
+    text: az logicapp workflow connector list -g rg -n app
+  - name: List the first 10 connectors.
+    text: az logicapp workflow connector list -g rg -n app --max-items 10
+"""
+
+helps['logicapp workflow connector show'] = """
+type: command
+short-summary: Show one connector available to a Logic App Standard site.
+long-summary: |
+  Reads the site-runtime operationGroups singleton route for one connector name and returns
+  the platform payload verbatim. Observed root keys are id, name, properties, and type for a
+  serviceProviders connector; a connectionProviders connector returns id, name, and properties
+  only. Availability of properties.capabilities and properties.connectionParameterSets is
+  likewise connector-dependent.
+examples:
+  - name: Show one connector.
+    text: az logicapp workflow connector show -g rg -n app --connector acasession
+"""
+
+helps['logicapp workflow connector operation'] = """
+type: group
+short-summary: Inspect the operations exposed by one connector.
+"""
+
+helps['logicapp workflow connector operation list'] = """
+type: command
+short-summary: List the operations exposed by one connector.
+long-summary: |
+  Reads the site-runtime operationGroups operations route for one connector and returns each
+  operation verbatim, with the connector name echoed at the top level for context. This route
+  returns one collection with no server-side paging and silently ignores $top, so --max-items
+  and --next-token are applied by the CLI after reading the whole collection.
+examples:
+  - name: List the operations exposed by one connector.
+    text: az logicapp workflow connector operation list -g rg -n app --connector acasession
+"""
+
+helps['logicapp workflow connector operation show'] = """
+type: command
+short-summary: Show one operation exposed by one connector.
+long-summary: |
+  Reads the site-runtime operationGroups operation singleton route and returns the platform
+  operation payload flattened at the response root (id, name, type, properties), with the
+  connector and operation inputs echoed alongside and disclosed under synthesised.
+  This route emits no operation manifest and no kind discriminator, and $expand=manifest is
+  silently ignored, so operation parameter and connection schemas are not available from this
+  command.
+examples:
+  - name: Show one operation on one connector.
+    text: az logicapp workflow connector operation show -g rg -n app --connector acasession --operation executeCode
+"""
+
+helps['logicapp workflow run action'] = """
+type: group
+short-summary: Inspect the actions of one Logic App Standard workflow run.
+"""
+
+helps['logicapp workflow run action list'] = """
+type: command
+short-summary: List the actions of one workflow run.
+long-summary: |
+  Reads the site-runtime run-actions route for one workflow and run identifier. The
+  response includes status, timestamps, correlation, and inputs/outputs links for each
+  action the run executed. Content link URIs embed a SAS credential and are withheld by
+  default; pass --show-content-urls to emit them in full. Supports --max-items and
+  --next-token as CLI client-side paging over the returned collection.
+examples:
+  - name: List actions of a workflow run.
+    text: az logicapp workflow run action list -g rg -n app --workflow wf --run-id 08584126679215176449502816579CU00
+"""
+
+helps['logicapp workflow run action show'] = """
+type: command
+short-summary: Show one action of one workflow run.
+long-summary: |
+  Reads the site-runtime run-action route for one workflow, run identifier, and action
+  name. Content link URIs embed a SAS credential and are withheld by default; pass
+  --show-content-urls to emit them in full. To read the content itself without handling
+  a credential, use "az logicapp workflow run action show-content --content inputs" or
+  "outputs".
+examples:
+  - name: Show one action of one workflow run.
+    text: az logicapp workflow run action show -g rg -n app --workflow wf --run-id 08584126679215176449502816579CU00 --action Compose_greeting
+"""
+
+helps['logicapp workflow run action show-content'] = """
+type: command
+short-summary: Show the raw inputs or outputs content for one action of one workflow run.
+long-summary: |
+  Follows the selected action's inputsLink.uri or outputsLink.uri exactly as returned by
+  the platform, without adding an Authorization header (the URI itself is SAS-bearing).
+  If the corresponding link URI is absent, the command refuses and points at
+  "az logicapp workflow run action show" to inspect the action. The first 256 bytes of
+  the content are returned as a preview together with contentSizeBytes and a truncated
+  flag.
+examples:
+  - name: Show the inputs content for one action.
+    text: az logicapp workflow run action show-content -g rg -n app --workflow wf --run-id 08584126679215176449502816579CU00 --action Compose_greeting --content inputs
+  - name: Show the outputs content for one action.
+    text: az logicapp workflow run action show-content -g rg -n app --workflow wf --run-id 08584126679215176449502816579CU00 --action Compose_greeting --content outputs
+"""
+
+helps['logicapp workflow version'] = """
+type: group
+short-summary: Inspect deployed versions of a Logic App Standard workflow.
+long-summary: |
+  Deploying changed content over an existing workflow creates a new workflow version
+  rather than replacing the previous one. Runs already in flight continue on the version
+  they started under, and new runs use the latest version. A run is therefore pinned to
+  the version that was current when it started, which means the workflow definition
+  deployed today is not necessarily the definition that produced an older run.
+  Use these commands to list the versions the platform holds and to fetch the definition
+  for a specific one, so a historical run can be diagnosed against the definition that
+  actually executed. The workflowVersion field on a trigger history entry reports which
+  version that entry ran under.
+"""
+
+helps['logicapp workflow version list'] = """
+type: command
+short-summary: List the deployed versions of a workflow.
+long-summary: Reads the site-runtime versions route for one workflow and returns version metadata, newest first as ordered by the platform. Definitions are omitted from the listing; use "az logicapp workflow version show" to fetch the definition for a specific version. Supports --max-items and --next-token as CLI client-side paging over the returned collection; the service is still read as one collection.
+examples:
+  - name: List the versions of a workflow.
+    text: az logicapp workflow version list -g rg -n app --workflow wf
+  - name: List the two most recent versions.
+    text: az logicapp workflow version list -g rg -n app --workflow wf --max-items 2
+"""
+
+helps['logicapp workflow version show'] = """
+type: command
+short-summary: Show one deployed version of a workflow, including its definition.
+long-summary: |
+  Reads the site-runtime version route for one workflow and version identifier, and
+  returns the version metadata together with the workflow definition, parameters, and
+  connection references recorded for that version. Secure parameter values are not
+  expanded by the platform.
+  The version identifier is the value reported by "az logicapp workflow version list",
+  and is also reported as the workflowVersion field on each entry returned by
+  "az logicapp workflow trigger history list" -- so a failed history entry can be taken
+  straight to the definition that produced it.
+examples:
+  - name: Show one workflow version.
+    text: az logicapp workflow version show -g rg -n app --workflow wf --version 08584129710997436905
+"""
+
+helps['logicapp workflow mock'] = """
+type: group
+short-summary: Inspect the global catalog of operation types the unit-test generator can mock.
+"""
+
+helps['logicapp workflow mock list'] = """
+type: command
+short-summary: List the global catalog of operation types the unit-test generator can mock.
+long-summary: This command returns a global catalog of mockable operation types, not a run-scoped list. The platform route accepts no workflow or run parameter; values are operation type names, not operations from any supplied run and not operation schemas. 'workflow unit-test create' does not read this output as a selection list. --http filters to HTTP operation types only. Supports --max-items and --next-token as CLI client-side paging over the returned global catalog; the service is still read as one collection.
+examples:
+  - name: Show the global mockable operation-type catalog.
+    text: az logicapp workflow mock list -g rg -n app
+  - name: Show only HTTP mockable operation types.
+    text: az logicapp workflow mock list -g rg -n app --http
+"""
+
+helps['logicapp workflow unit-test'] = """
+type: group
+short-summary: Generate mock-definition artifacts from a workflow run.
+"""
+
+helps['logicapp workflow unit-test create'] = """
+type: command
+short-summary: Generate a unit-test mock-definition zip artifact from a workflow run.
+long-summary: |
+  The artifact this command produces is a mock-definition JSON zip, not a runnable test
+  project, test harness, or CI-integrated unit test. The 'create' verb is a core shape
+  convention (per authoring_commands.md); it does not upgrade what the artifact is. The
+  platform mocks every eligible trigger and every eligible non-repetitive Succeeded or
+  Failed action automatically. The CLI sends only UnitTestName in the request body; there
+  is no operation-selection flag. Before emission, the CLI redacts site-runtime tokens,
+  credential-bearing URI query parameters, client identity/IP, forwarded/ARR SSL, and ARM
+  context headers, and adds x-logicapp-cli-redaction metadata to each mock JSON file
+  describing what was changed. Named live possibility - a workflow that intentionally
+  reads one of those redacted headers may need the original value for exact-value
+  assertions; the observed header-reading probe did not need them. With --output-file, the
+  application/zip response is written to that local file. Without --output-file, raw zip
+  bytes are streamed to stdout and no default path is invented.
+examples:
+  - name: Generate a local unit-test mock-definition zip artifact.
+    text: az logicapp workflow unit-test create -g rg -n app --workflow wf --run-id run1 --unit-test-name checkoutTest --output-file ./checkoutTest.zip
+  - name: Stream the raw zip artifact to stdout (omit --output-file and redirect shell output; `az ... > checkoutTest.zip`).
+    text: az logicapp workflow unit-test create -g rg -n app --workflow wf --run-id run1 --unit-test-name checkoutTest
+"""
