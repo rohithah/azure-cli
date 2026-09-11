@@ -1811,12 +1811,43 @@ subscription than the app service environment, please use the resource ID for --
         c.argument('content', options_list=['--content'], choices=['inputs', 'outputs'],
                    help='Which content stream on the action to fetch and preview: inputs or outputs.')
 
+    # ------------------------------------------------------------------
+    # Connector catalog leaves (connector list/show, connector operation
+    # list/show). ``-n/--name`` and ``--slot/-s`` are inherited from
+    # ``argument_context('logicapp')`` above (L1248) and are not redeclared;
+    # the design reference spells a ``--site`` alias, which is deliberately
+    # not added.
+    for command_name in (
+        'logicapp workflow connector show',
+        'logicapp workflow connector operation list',
+        'logicapp workflow connector operation show',
+    ):
+        with self.argument_context(command_name) as c:
+            c.argument('connector', options_list=['--connector'],
+                       help='Connector (operation group) name, for example "acasession".')
+    with self.argument_context('logicapp workflow connector operation show') as c:
+        c.argument('operation', options_list=['--operation'],
+                   help='Operation name on the connector, for example "executeCode".')
+    for command_name in (
+        'logicapp workflow connector list',
+        'logicapp workflow connector operation list',
+    ):
+        with self.argument_context(command_name) as c:
+            c.argument('max_items', options_list=['--max-items'], type=int, arg_group='Pagination',
+                       help='Maximum number of items to return from the client-side page. The '
+                            'operationGroups route returns one collection and ignores $top, so '
+                            'this is applied by the CLI after reading that collection.')
+            c.argument('next_token', options_list=['--next-token', '--continuation-token'], arg_group='Pagination',
+                       help='Continuation token returned by a previous call to this command. This '
+                            'token is CLI-computed, not a server-side token.')
+
     for command_name in (
         'logicapp workflow version list',
         'logicapp workflow version show',
     ):
         with self.argument_context(command_name) as c:
             c.argument('workflow', options_list=['--workflow'], help='Workflow name.')
+
     with self.argument_context('logicapp workflow version list') as c:
         c.argument('max_items', options_list=['--max-items'], type=int, arg_group='Pagination',
                    help='Maximum number of items to return from the client-side page.')

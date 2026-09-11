@@ -113,7 +113,7 @@ def test_all_m2_commands_carry_valid_manifest_rows_and_expected_capability_ids()
     """Real content check on the shipped workflow surface.
 
     Any manifest row that fails to validate, any missing command, or any
-    unexpected capability id lights this up.  The 12 (capability id, command)
+    unexpected capability id lights this up.  The 23 (capability id, command)
     pairs below match the port's declared surface — see
     ``appservice/commands.py::_register_logicapp_workflow_commands`` and each
     module's ``_MANIFEST`` dict.
@@ -144,6 +144,10 @@ def test_all_m2_commands_carry_valid_manifest_rows_and_expected_capability_ids()
         ("CM-003", "logicapp workflow run action list"),
         ("CM-003-show", "logicapp workflow run action show"),
         ("CM-004", "logicapp workflow run action show-content"),
+        ("CM-022-list", "logicapp workflow connector list"),
+        ("CM-022-show", "logicapp workflow connector show"),
+        ("CM-023-list", "logicapp workflow connector operation list"),
+        ("CM-023-show", "logicapp workflow connector operation show"),
     }
     assert m2_pairs == expected, "shipped workflow manifest surface diverged from expected"
 

@@ -218,6 +218,7 @@ def load_command_table(self, _):
     logicapp_run_action_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._run_action#{}')
     logicapp_run_unit_test_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._run_unit_test#{}')
     logicapp_version_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._version#{}')
+    logicapp_connector_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._connector#{}')
 
     webapp_exec_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.webapp_exec#{}')
 
@@ -721,6 +722,7 @@ def load_command_table(self, _):
         logicapp_run_action_custom,
         logicapp_run_unit_test_custom,
         logicapp_version_custom,
+        logicapp_connector_custom,
     )
 
 
@@ -730,7 +732,8 @@ def _register_logicapp_workflow_commands(loader,
                                          logicapp_run_custom,
                                          logicapp_run_action_custom,
                                          logicapp_run_unit_test_custom,
-                                         logicapp_version_custom):
+                                         logicapp_version_custom,
+                                         logicapp_connector_custom):
     """Register the M2 workflow surface (triggers, trigger history, mock catalog, unit-test).
 
     Registration is flattened here (per core convention: zero per-noun ``register_commands``
@@ -740,7 +743,7 @@ def _register_logicapp_workflow_commands(loader,
     a new ``command_group`` decorator kwarg.
     """
     from azure.cli.command_modules.appservice.logicapp._manifest import attach_manifest
-    from azure.cli.command_modules.appservice.logicapp import _trigger, _trigger_history, _run, _run_action, _run_unit_test, _version
+    from azure.cli.command_modules.appservice.logicapp import _trigger, _trigger_history, _run, _run_action, _run_unit_test, _version, _connector
 
     with loader.command_group('logicapp workflow version', custom_command_type=logicapp_version_custom) as g:
         g.custom_command('list', 'version_list', table_transformer=_version.version_list_table_format)
@@ -785,6 +788,18 @@ def _register_logicapp_workflow_commands(loader,
         attach_manifest(loader, 'logicapp workflow run action show', _run_action.RUN_ACTION_SHOW_MANIFEST)
         g.custom_command('show-content', 'run_action_show_content', table_transformer=_run_action.run_action_show_content_table_format)
         attach_manifest(loader, 'logicapp workflow run action show-content', _run_action.RUN_ACTION_SHOW_CONTENT_MANIFEST)
+
+    with loader.command_group('logicapp workflow connector', custom_command_type=logicapp_connector_custom) as g:
+        g.custom_command('list', 'connector_list', table_transformer=_connector.connector_list_table_format)
+        attach_manifest(loader, 'logicapp workflow connector list', _connector.CONNECTOR_LIST_MANIFEST)
+        g.custom_show_command('show', 'connector_show', table_transformer=_connector.connector_show_table_format)
+        attach_manifest(loader, 'logicapp workflow connector show', _connector.CONNECTOR_SHOW_MANIFEST)
+
+    with loader.command_group('logicapp workflow connector operation', custom_command_type=logicapp_connector_custom) as g:
+        g.custom_command('list', 'connector_operation_list', table_transformer=_connector.connector_operation_list_table_format)
+        attach_manifest(loader, 'logicapp workflow connector operation list', _connector.CONNECTOR_OPERATION_LIST_MANIFEST)
+        g.custom_show_command('show', 'connector_operation_show', table_transformer=_connector.connector_operation_show_table_format)
+        attach_manifest(loader, 'logicapp workflow connector operation show', _connector.CONNECTOR_OPERATION_SHOW_MANIFEST)
 
     with loader.command_group('logicapp workflow mock', custom_command_type=logicapp_run_unit_test_custom) as g:
         g.custom_command('list', 'mock_list', table_transformer=_run_unit_test.mockable_operations_table_format)

@@ -69,6 +69,26 @@ def mockable_operations_path(http_only=False):
     return "listMockableHttpOperations" if http_only else "listMockableOperations"
 
 
+def operation_groups_path():
+    """Connector catalog route: all operation groups visible to the site."""
+    return "operationGroups"
+
+
+def operation_group_path(connector):
+    """Singleton connector (operation group) route."""
+    return "{}/{}".format(operation_groups_path(), _quote_segment(connector))
+
+
+def operation_group_operations_path(connector):
+    """Operations exposed by one connector."""
+    return "{}/operations".format(operation_group_path(connector))
+
+
+def operation_group_operation_path(connector, operation):
+    """Singleton operation on one connector."""
+    return "{}/{}".format(operation_group_operations_path(connector), _quote_segment(operation))
+
+
 def generate_unit_test_path(workflow, run_id):
     return "{}/generateUnitTest".format(workflow_run_path(workflow, run_id))
 

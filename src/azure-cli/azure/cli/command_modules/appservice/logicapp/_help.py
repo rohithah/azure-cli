@@ -344,6 +344,77 @@ examples:
     text: az logicapp workflow run show -g rg -n app --workflow wf --run-id 08584126679215176449502816579CU00 --show-content-urls
 """
 
+helps['logicapp workflow connector'] = """
+type: group
+short-summary: Inspect the connector catalog available to a Logic App Standard site.
+"""
+
+helps['logicapp workflow connector list'] = """
+type: command
+short-summary: List the connectors available to a Logic App Standard site.
+long-summary: |
+  Reads the site-runtime operationGroups route and returns each connector verbatim.
+  The catalog mixes two classes, distinguishable by the id prefix: "connectionProviders/"
+  (built-in operations) and "serviceProviders/" (service-provider connectors). The type
+  field is emitted only for serviceProviders entries and is absent for connectionProviders
+  entries; the CLI does not backfill it. This route returns one collection with no
+  server-side paging and silently ignores $top, so --max-items and --next-token are
+  applied by the CLI after reading the whole collection and are disclosed under
+  synthesised.clientSidePaging.
+examples:
+  - name: List all connectors available to a Logic App Standard site.
+    text: az logicapp workflow connector list -g rg -n app
+  - name: List the first 10 connectors.
+    text: az logicapp workflow connector list -g rg -n app --max-items 10
+"""
+
+helps['logicapp workflow connector show'] = """
+type: command
+short-summary: Show one connector available to a Logic App Standard site.
+long-summary: |
+  Reads the site-runtime operationGroups singleton route for one connector name and returns
+  the platform payload verbatim. Observed root keys are id, name, properties, and type for a
+  serviceProviders connector; a connectionProviders connector returns id, name, and properties
+  only. Availability of properties.capabilities and properties.connectionParameterSets is
+  likewise connector-dependent.
+examples:
+  - name: Show one connector.
+    text: az logicapp workflow connector show -g rg -n app --connector acasession
+"""
+
+helps['logicapp workflow connector operation'] = """
+type: group
+short-summary: Inspect the operations exposed by one connector.
+"""
+
+helps['logicapp workflow connector operation list'] = """
+type: command
+short-summary: List the operations exposed by one connector.
+long-summary: |
+  Reads the site-runtime operationGroups operations route for one connector and returns each
+  operation verbatim, with the connector name echoed at the top level for context. This route
+  returns one collection with no server-side paging and silently ignores $top, so --max-items
+  and --next-token are applied by the CLI after reading the whole collection.
+examples:
+  - name: List the operations exposed by one connector.
+    text: az logicapp workflow connector operation list -g rg -n app --connector acasession
+"""
+
+helps['logicapp workflow connector operation show'] = """
+type: command
+short-summary: Show one operation exposed by one connector.
+long-summary: |
+  Reads the site-runtime operationGroups operation singleton route and returns the platform
+  operation payload flattened at the response root (id, name, type, properties), with the
+  connector and operation inputs echoed alongside and disclosed under synthesised.
+  This route emits no operation manifest and no kind discriminator, and $expand=manifest is
+  silently ignored, so operation parameter and connection schemas are not available from this
+  command.
+examples:
+  - name: Show one operation on one connector.
+    text: az logicapp workflow connector operation show -g rg -n app --connector acasession --operation executeCode
+"""
+
 helps['logicapp workflow run action'] = """
 type: group
 short-summary: Inspect the actions of one Logic App Standard workflow run.

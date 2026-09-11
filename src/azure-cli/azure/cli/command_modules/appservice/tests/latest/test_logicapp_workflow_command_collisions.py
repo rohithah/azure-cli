@@ -82,6 +82,10 @@ PINNED_M2_WORKFLOW_COMMANDS = frozenset({
     "logicapp workflow unit-test create",
     "logicapp workflow version list",
     "logicapp workflow version show",
+    "logicapp workflow connector list",
+    "logicapp workflow connector show",
+    "logicapp workflow connector operation list",
+    "logicapp workflow connector operation show",
 })
 
 
