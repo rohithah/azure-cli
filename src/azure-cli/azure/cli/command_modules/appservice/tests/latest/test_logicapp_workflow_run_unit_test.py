@@ -25,6 +25,7 @@ here on real content (not exit code).
 
 import io
 import json
+import os
 import re
 import shutil
 from pathlib import Path
@@ -98,7 +99,11 @@ def _json_from_zip(zip_bytes):
 
 
 def _scratch_dir():
-    root = Path("test-results-unit")
+    # Must be unique per xdist worker: a fixed relative path is shared by every
+    # worker, so one worker's rmtree races another worker's writes and this
+    # suite's credential-redaction assertions fail nondeterministically.
+    worker = os.environ.get("PYTEST_XDIST_WORKER", "master")
+    root = Path(f"test-results-unit-{worker}")
     if root.exists():
         shutil.rmtree(root)
     root.mkdir()
