@@ -24,7 +24,8 @@ and why each one is evidence-driven:
 2. **``nextContinuationToken`` is CLI-computed, not platform paging.** The design left this
    row undecided. Live probe settles it: ``operationGroups`` returns root key ``value`` only
    (50 items), with no ``nextLink`` and no ``nextContinuationToken``; adding ``$top=2`` returns
-   a **byte-identical 280856-byte** response, so the route neither pages nor honours ``$top``.
+   a **byte-identical 280856-byte** response. The service returns a single collection
+   and does not support ``$top`` for this route.
    The operations route behaves the same way (4 items; ``$top=2`` byte-identical at 4208 bytes).
    ``--max-items``/``--next-token`` are therefore applied by the CLI after reading the whole
    collection, exactly as ``run action list`` does. Per ``decisions.md`` D66 this finding is
@@ -37,7 +38,7 @@ and why each one is evidence-driven:
 
 4. **``manifest`` is not emitted and is not synthesised.** The string ``manifest`` does not
    appear anywhere in the live response, and ``$expand=manifest`` returns a **byte-identical
-   942-byte** payload -- the expand is silently ignored. Because ``kind`` and ``manifest`` were
+   942-byte** payload and does not alter the response. Because ``kind`` and ``manifest`` were
    the only two siblings the design's ``operation`` wrapper existed to separate, that wrapper
    would now be a single-key envelope carrying no information. This module therefore flattens
    the platform operation object to the response root and discloses CLI echoes under
@@ -85,7 +86,7 @@ _SITE_PROVIDER = "/providers/Microsoft.Web/sites/"
 
 _CLIENT_PAGING_GAP = (
     "The site-runtime operationGroups route returns one collection with no observed nextLink "
-    "and silently ignores $top (a $top=2 probe returned a byte-identical response); "
+    "and does not support $top (a $top=2 probe returned a byte-identical response); "
     "--max-items and --next-token are applied by the CLI after reading that collection."
 )
 
@@ -139,7 +140,7 @@ CONNECTOR_OPERATION_SHOW_MANIFEST = {
     "delegatedTo": None,
     "gap": (
         "The platform operation payload carries no manifest and no kind discriminator; "
-        "$expand=manifest is silently ignored (byte-identical response), so parameter schemas "
+        "$expand=manifest does not alter the byte-identical response, so parameter schemas "
         "are not available from this route."
     ),
     "modeCondition": None,
@@ -151,7 +152,7 @@ def connector_list(cmd, resource_group_name, name, max_items=None, next_token=No
     """List the connector catalog (operation groups) visible to one Logic App Standard site.
 
     Client-side paging is applied over the returned collection because the route neither
-    emits a continuation token nor honours ``$top`` (see module docstring, item 2).
+    emits a continuation token or supports ``$top`` (see module docstring, item 2).
     """
     client = client or _client(cmd, resource_group_name, name)
     payload = client.list(operation_groups_path(),
@@ -167,7 +168,7 @@ def connector_list(cmd, resource_group_name, name, max_items=None, next_token=No
                 "no field is added, renamed, or backfilled. Note that value[].type is emitted only "
                 "for serviceProviders entries and is absent for connectionProviders entries -- the "
                 "CLI does not synthesise it. nextContinuationToken is CLI-computed: the route returns "
-                "one collection with no nextLink and ignores $top, so --max-items and --next-token "
+                "one collection with no nextLink and does not support $top, so --max-items and --next-token "
                 "are applied by the CLI after reading that collection."
             ),
         },
@@ -212,7 +213,7 @@ def connector_operation_list(cmd, resource_group_name, name, connector,
             "reason": (
                 "connector is the CLI input echoed at the top level for context; the platform list "
                 "route does not return it. Every value[] entry is copied verbatim. nextContinuationToken "
-                "is CLI-computed: the route returns one collection with no nextLink and ignores $top, so "
+                "is CLI-computed: the route returns one collection with no nextLink and does not support $top, so "
                 "--max-items and --next-token are applied by the CLI after reading that collection."
             ),
         },
@@ -239,7 +240,7 @@ def connector_operation_show(cmd, resource_group_name, name, connector, operatio
             "connector and operation are CLI inputs echoed at the top level for context. Every other "
             "key is copied verbatim from the platform operation payload. No kind discriminator and no "
             "manifest are emitted: the live route returns exactly id, name, properties, and type, and "
-            "$expand=manifest is silently ignored, so operation parameter schemas are not available here."
+            "$expand=manifest does not alter the response, so operation parameter schemas are not available here."
         ),
     }
     return result

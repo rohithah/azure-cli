@@ -155,7 +155,7 @@ def test_connector_list_discloses_client_side_paging():
     synthesised = result["synthesised"]
     assert synthesised["clientSidePaging"] is True
     assert synthesised["fields"] == ["nextContinuationToken"]
-    assert "ignores $top" in synthesised["reason"]
+    assert "does not support $top" in synthesised["reason"]
 
 
 def test_connector_list_table_format_includes_the_id_that_distinguishes_the_two_classes():

@@ -376,7 +376,7 @@ long-summary: |
   (built-in operations) and "serviceProviders/" (service-provider connectors). The type
   field is emitted only for serviceProviders entries and is absent for connectionProviders
   entries; the CLI does not backfill it. This route returns one collection with no
-  server-side paging and silently ignores $top, so --max-items and --next-token are
+  server-side paging and does not support $top, so --max-items and --next-token are
   applied by the CLI after reading the whole collection and are disclosed under
   synthesised.clientSidePaging.
 examples:
@@ -411,7 +411,7 @@ short-summary: List the operations exposed by one connector.
 long-summary: |
   Reads the site-runtime operationGroups operations route for one connector and returns each
   operation verbatim, with the connector name echoed at the top level for context. This route
-  returns one collection with no server-side paging and silently ignores $top, so --max-items
+  returns one collection with no server-side paging and does not support $top, so --max-items
   and --next-token are applied by the CLI after reading the whole collection.
 examples:
   - name: List the operations exposed by one connector.
@@ -426,7 +426,7 @@ long-summary: |
   operation payload flattened at the response root (id, name, type, properties), with the
   connector and operation inputs echoed alongside and disclosed under synthesised.
   This route emits no operation manifest and no kind discriminator, and $expand=manifest is
-  silently ignored, so operation parameter and connection schemas are not available from this
+  not reflected in the response, so operation parameter and connection schemas are not available from this
   command.
 examples:
   - name: Show one operation on one connector.

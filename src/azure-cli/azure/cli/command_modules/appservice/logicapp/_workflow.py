@@ -10,7 +10,7 @@ Ships the two read-only workflow leaves: ``workflow list`` and ``workflow show``
 Both are thin pass-throughs over the site-runtime ``workflows`` route family.
 
 Live capture against ``la-cli-pilot-ri2bg8`` / ``rg-lacli-ri2bg8`` showed that
-``GET .../workflows`` returns a top-level JSON array and ignores ``$top``; no
+``GET .../workflows`` returns a top-level JSON array and does not support ``$top``; no
 server-side or client-side paging flags are exposed here. The CLI wraps that
 array in a ``value`` envelope to match the shipped workflow list-command
 convention, but it does not mint ``nextContinuationToken`` or ``connectors``.
@@ -41,7 +41,7 @@ WORKFLOW_LIST_MANIFEST = {
     "delegatedTo": None,
     "gap": (
         "The site-runtime workflows route returns a top-level array with no observed nextLink "
-        "or continuation token and silently ignores $top; this command therefore exposes no "
+        "or continuation token and does not support $top; this command therefore exposes no "
         "paging flags and emits no nextContinuationToken."
     ),
     "modeCondition": None,

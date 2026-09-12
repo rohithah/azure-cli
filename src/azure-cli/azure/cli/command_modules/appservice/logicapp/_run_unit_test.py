@@ -9,9 +9,9 @@
 Rename note: the extension's ``list-mockable-operations`` and
 ``list-mockable-http-operations`` merge into ``workflow mock list [--http]``,
 and ``generate-unit-test`` becomes ``workflow unit-test create``. The two
-disclosed platform failures (defect #8 -- global catalog; defect #12 -- the
-generated artifact is a mock-definition JSON, not a runnable test) are
-preserved verbatim in the response envelope and help text; the rename to
+disclosed platform observations (global catalog scope, and the
+generated artifact being a mock-definition JSON rather than a runnable test) are
+preserved in the response envelope and help text; the rename to
 ``create`` is a shape convention, not an upgrade in what the artifact is.
 """
 

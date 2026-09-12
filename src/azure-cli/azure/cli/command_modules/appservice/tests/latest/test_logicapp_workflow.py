@@ -8,7 +8,7 @@
 Assertions target real content from live workflow captures: route paths,
 ``api-version`` handling, the seven observed platform keys, absence of root
 ``state`` and stdout ``schemaVersion``, list envelope shape, and refusal to mint
-``connectors`` or ``nextContinuationToken`` for a route that ignores ``$top``.
+``connectors`` or ``nextContinuationToken`` for a route that does not support ``$top``.
 """
 
 import pytest
