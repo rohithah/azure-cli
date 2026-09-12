@@ -10,9 +10,8 @@ fields), the class-conditional ``type`` field, the proven absence of ``kind`` an
 ``manifest`` on the operation payload, ``synthesised`` disclosure shape, and CLI-side
 paging over a route that does not page.
 
-Fixture payloads below are trimmed copies of live captures taken against
-``la-cli-pilot-ri2bg8`` / ``rg-lacli-ri2bg8`` and stored in the spec corpus at
-``.squad/findings/scratch/connector/``. Key sets are reproduced exactly as observed.
+Fixture payloads below are trimmed copies of live captures taken against a
+deployed Logic Apps Standard app. Key sets are reproduced exactly as observed.
 """
 
 from azure.cli.core.mock import DummyCli

@@ -10,12 +10,10 @@ Ships the four read-only connector leaves in this pass: ``connector list``,
 ``connector show``, ``connector operation list``, and ``connector operation show``.
 All four are thin pass-throughs over the site-runtime ``operationGroups`` route family.
 
-Every design decision below is anchored to a live capture taken against
-``la-cli-pilot-ri2bg8`` / ``rg-lacli-ri2bg8`` and stored under
-``.squad/findings/scratch/connector/`` in the spec corpus.
+Every design decision below is anchored to a live capture taken against a
+deployed Logic Apps Standard app.
 
-Divergences from the design reference (``logicapps-standard-cli-reference.md:869-929``)
-and why each one is evidence-driven:
+Divergences from the design reference and why each one is evidence-driven:
 
 1. **No ``--site`` alias.** The design signature spells ``--site <s>``; this module reuses
    the inherited ``-n/--name`` site argument declared once in ``_params.py`` (L1248), matching

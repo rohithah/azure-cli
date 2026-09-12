@@ -9,7 +9,7 @@
 Ships the two read-only workflow leaves: ``workflow list`` and ``workflow show``.
 Both are thin pass-throughs over the site-runtime ``workflows`` route family.
 
-Live capture against ``la-cli-pilot-ri2bg8`` / ``rg-lacli-ri2bg8`` showed that
+Live capture against a deployed Logic Apps Standard app showed that
 ``GET .../workflows`` returns a top-level JSON array and does not support ``$top``; no
 server-side or client-side paging flags are exposed here. The CLI wraps that
 array in a ``value`` envelope to match the shipped workflow list-command
