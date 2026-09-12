@@ -1248,6 +1248,11 @@ subscription than the app service environment, please use the resource ID for --
     with self.argument_context('logicapp') as c:
         c.argument('name', arg_type=logicapp_name_arg_type)
 
+    with self.argument_context('logicapp capabilities list') as c:
+        from azure.cli.command_modules.appservice.logicapp._manifest import FEASIBILITY_STATES, PLANES
+        c.argument('plane', options_list=['--plane'], arg_type=get_enum_type(PLANES), help='Filter by execution plane.')
+        c.argument('feasibility', options_list=['--feasibility'], arg_type=get_enum_type(FEASIBILITY_STATES), help='Filter by feasibility state.')
+
     with self.argument_context('logicapp create') as c:
         c.argument('deployment_container_image_name', options_list=['--deployment-container-image-name', '-i'], help='Container image name from container registry, e.g. publisher/image-name:tag')
         c.argument('docker_registry_server_user', options_list=['--docker-registry-server-user', '-d'], help='The container registry server username.')

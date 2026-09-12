@@ -113,7 +113,7 @@ def test_all_m2_commands_carry_valid_manifest_rows_and_expected_capability_ids()
     """Real content check on the shipped workflow surface.
 
     Any manifest row that fails to validate, any missing command, or any
-    unexpected capability id lights this up.  The 23 (capability id, command)
+    unexpected capability id lights this up.  The (capability id, command)
     pairs below match the port's declared surface — see
     ``appservice/commands.py::_register_logicapp_workflow_commands`` and each
     module's ``_MANIFEST`` dict.
@@ -121,8 +121,9 @@ def test_all_m2_commands_carry_valid_manifest_rows_and_expected_capability_ids()
     table = _loaded_command_table()
     rows = collect_manifest_rows(table)
 
-    m2_pairs = {(row["capabilityId"], row["command"]) for row in rows
-                if row["command"].startswith("logicapp workflow ")}
+    logicapp_pairs = {(row["capabilityId"], row["command"]) for row in rows
+                      if row["command"].startswith("logicapp workflow ")
+                      or row["command"].startswith("logicapp capabilities ")}
 
     expected = {
         ("CM-013-list", "logicapp workflow trigger list"),
@@ -150,12 +151,13 @@ def test_all_m2_commands_carry_valid_manifest_rows_and_expected_capability_ids()
         ("CM-023-show", "logicapp workflow connector operation show"),
         ("CM-024-list", "logicapp workflow list"),
         ("CM-024-show", "logicapp workflow show"),
+        ("CM-025", "logicapp capabilities list"),
     }
-    assert m2_pairs == expected, "shipped workflow manifest surface diverged from expected"
+    assert logicapp_pairs == expected, "shipped Logic Apps manifest surface diverged from expected"
 
-    # Every workflow row round-trips validate_manifest_row cleanly.
+    # Every Logic Apps row round-trips validate_manifest_row cleanly.
     for row in rows:
-        if row["command"].startswith("logicapp workflow "):
+        if row["command"].startswith("logicapp workflow ") or row["command"].startswith("logicapp capabilities "):
             assert validate_manifest_row(dict(row), command_name=row["command"]) == row
 
 

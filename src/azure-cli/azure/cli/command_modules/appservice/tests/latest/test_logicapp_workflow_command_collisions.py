@@ -62,7 +62,7 @@ PINNED_CORE_LOGICAPP_COMMANDS = frozenset({
 })
 
 
-PINNED_M2_WORKFLOW_COMMANDS = frozenset({
+PINNED_LOGICAPP_PORT_COMMANDS = frozenset({
     "logicapp workflow list",
     "logicapp workflow show",
     "logicapp workflow trigger list",
@@ -88,6 +88,7 @@ PINNED_M2_WORKFLOW_COMMANDS = frozenset({
     "logicapp workflow connector show",
     "logicapp workflow connector operation list",
     "logicapp workflow connector operation show",
+    "logicapp capabilities list",
 })
 
 
@@ -171,7 +172,7 @@ class TestPinnedCoreSurfacePresence:
         )
 
     def test_no_pinned_core_command_was_replaced_by_a_workflow_command(self):
-        assert not (PINNED_CORE_LOGICAPP_COMMANDS & PINNED_M2_WORKFLOW_COMMANDS), (
+        assert not (PINNED_CORE_LOGICAPP_COMMANDS & PINNED_LOGICAPP_PORT_COMMANDS), (
             "Pinned baseline and workflow command sets must be disjoint at the source-pin level."
         )
 
@@ -222,28 +223,26 @@ class TestPinnedCoreHandlerIdentity:
         )
 
 
-class TestPinnedM2WorkflowInventory:
-    """Guard (3) — the workflow workflow surface is frozen so a later PR
-    that drops or adds a workflow command is caught."""
+class TestPinnedLogicappPortInventory:
+    """Guard (3) -- the shipped workflow and capabilities surface is frozen."""
 
-    def test_m2_workflow_surface_matches_the_pinned_inventory_exactly(self):
+    def test_logicapp_port_surface_matches_the_pinned_inventory_exactly(self):
         table = _load_table()
-        actual = {n for n in table if n.startswith("logicapp workflow ")}
-        added = actual - PINNED_M2_WORKFLOW_COMMANDS
-        removed = PINNED_M2_WORKFLOW_COMMANDS - actual
+        actual = {n for n in table if n.startswith("logicapp workflow ") or n.startswith("logicapp capabilities ")}
+        added = actual - PINNED_LOGICAPP_PORT_COMMANDS
+        removed = PINNED_LOGICAPP_PORT_COMMANDS - actual
         assert not added and not removed, (
-            f"workflow inventory drifted. Added: {sorted(added)}. "
+            f"Logic Apps port inventory drifted. Added: {sorted(added)}. "
             f"Removed: {sorted(removed)}. Update the pin AND the port findings."
         )
 
-    def test_every_m2_workflow_command_routes_into_an_m2_port_module(self):
-        """Positive counterpart to Guard (4) — workflow commands
-        must live inside one of the workflow-added ``logicapp/_*`` modules.
-        Catches an accidental workflow route registered against the wrong
-        module path."""
+    def test_every_logicapp_port_command_routes_into_a_port_module(self):
+        """Positive counterpart to Guard (4) -- port commands
+        must live inside one of the added ``logicapp/_*`` modules.
+        Catches an accidental route registered against the wrong module path."""
         table = _load_table()
         stragglers = []
-        for name in PINNED_M2_WORKFLOW_COMMANDS:
+        for name in PINNED_LOGICAPP_PORT_COMMANDS:
             if name not in table:
                 continue
             op = _op_path(table[name])
@@ -253,7 +252,7 @@ class TestPinnedM2WorkflowInventory:
             if not any(suffix + "#" in op for suffix in WORKFLOW_PORTED_MODULE_SUFFIXES):
                 stragglers.append((name, op))
         assert not stragglers, (
-            "workflow commands must route into one of the workflow port "
+            "Logic Apps port commands must route into one of the port "
             f"modules ({WORKFLOW_PORTED_MODULE_SUFFIXES}). Stragglers: {stragglers}."
         )
 

@@ -49,6 +49,7 @@ from azure.cli.command_modules.appservice.logicapp._workflow import (
     _workflow_list_response,
     _workflow_response,
 )
+from azure.cli.command_modules.appservice.logicapp._capabilities import _capabilities_response
 
 
 # One invocation per shipped stdout-response builder. New builders are forced
@@ -78,6 +79,8 @@ _STDOUT_BUILDER_INVOCATIONS = {
         {"name": "wf", "health": {"state": "Healthy"}}),
     "_workflow_list_response": lambda: _workflow_list_response(
         [{"name": "wf", "health": {"state": "Healthy"}}]),
+    "_capabilities_response": lambda: _capabilities_response(
+        [{"capabilityId": "CM-025", "schemaVersion": "logicapp.capabilities-list-2026-09-11"}]),
 }
 
 

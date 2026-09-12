@@ -362,6 +362,28 @@ examples:
     text: az logicapp workflow run show -g rg -n app --workflow wf --run-id 08584126679215176449502816579CU00 --show-content-urls
 """
 
+helps['logicapp capabilities'] = """
+type: group
+short-summary: Inspect the loaded Logic Apps command capability manifest.
+"""
+
+helps['logicapp capabilities list'] = """
+type: command
+short-summary: List Logic Apps command capability metadata from the loaded command table.
+long-summary: |
+  Reads the loaded Azure CLI command table and returns the Logic Apps capability manifest
+  rows attached during command registration. This command makes no HTTP request and does
+  not require a Logic App site. Each row describes command availability, execution plane,
+  schema-document metadata, and disclosure fields for the shipped Logic Apps surface.
+examples:
+  - name: List all loaded Logic Apps capability rows.
+    text: az logicapp capabilities list
+  - name: List site-runtime capability rows.
+    text: az logicapp capabilities list --plane site-runtime
+  - name: List capability rows with a specific feasibility state.
+    text: az logicapp capabilities list --feasibility supported
+"""
+
 helps['logicapp workflow connector'] = """
 type: group
 short-summary: Inspect the connector catalog available to a Logic App Standard site.

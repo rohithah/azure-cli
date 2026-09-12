@@ -220,6 +220,7 @@ def load_command_table(self, _):
     logicapp_version_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._version#{}')
     logicapp_connector_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._connector#{}')
     logicapp_workflow_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._workflow#{}')
+    logicapp_capabilities_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.logicapp._capabilities#{}')
 
     webapp_exec_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.webapp_exec#{}')
 
@@ -725,6 +726,7 @@ def load_command_table(self, _):
         logicapp_version_custom,
         logicapp_connector_custom,
         logicapp_workflow_custom,
+        logicapp_capabilities_custom,
     )
 
 
@@ -736,7 +738,8 @@ def _register_logicapp_workflow_commands(loader,
                                          logicapp_run_unit_test_custom,
                                          logicapp_version_custom,
                                          logicapp_connector_custom,
-                                         logicapp_workflow_custom):
+                                         logicapp_workflow_custom,
+                                         logicapp_capabilities_custom):
     """Register the M2 workflow surface (triggers, trigger history, mock catalog, unit-test).
 
     Registration is flattened here (per core convention: zero per-noun ``register_commands``
@@ -747,7 +750,11 @@ def _register_logicapp_workflow_commands(loader,
     """
     from azure.cli.command_modules.appservice.logicapp._manifest import attach_manifest
     from azure.cli.command_modules.appservice.logicapp import (
-        _connector, _run, _run_action, _run_unit_test, _trigger, _trigger_history, _version, _workflow)
+        _capabilities, _connector, _run, _run_action, _run_unit_test, _trigger, _trigger_history, _version, _workflow)
+
+    with loader.command_group('logicapp capabilities', custom_command_type=logicapp_capabilities_custom) as g:
+        g.custom_command('list', 'capabilities_list', table_transformer=_capabilities.capabilities_table_format)
+        attach_manifest(loader, 'logicapp capabilities list', _capabilities.CAPABILITIES_LIST_MANIFEST)
 
     with loader.command_group('logicapp workflow', custom_command_type=logicapp_workflow_custom) as g:
         g.custom_command('list', 'workflow_list', table_transformer=_workflow.workflow_list_table_format)
